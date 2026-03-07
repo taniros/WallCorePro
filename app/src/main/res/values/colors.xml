@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Good Morning / Good Night brand palette -->
+    <color name="sunrise_amber">#FFB300</color>
+    <color name="sunrise_orange">#FF6F00</color>
+    <color name="sunrise_peach">#FFCCBC</color>
+    <color name="morning_gold">#FFD54F</color>
+    <color name="moon_purple">#7C4DFF</color>
+    <color name="midnight_blue">#0D1B3E</color>
+    <color name="star_glow">#B0BEC5</color>
+    <color name="night_navy">#090E1A</color>
+    <color name="background_warm">#0D0A0E</color>
+    <color name="surface_warm">#1A1015</color>
+    <color name="on_surface_warm">#F5E6D3</color>
+
+    <!-- Splash screen -->
+    <color name="splash_background">#0D0A0E</color>
+</resources>

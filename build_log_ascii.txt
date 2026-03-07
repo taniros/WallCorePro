@@ -1,0 +1,148 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: clean assembleDebug
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:clean
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:injectCrashlyticsMappingFileIdDebug
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:generateDebugResValues FROM-CACHE
+> Task :app:generateDebugBuildConfig FROM-CACHE
+> Task :app:processDebugGoogleServices FROM-CACHE
+> Task :app:javaPreCompileDebug FROM-CACHE
+> Task :app:desugarDebugFileDependencies FROM-CACHE
+> Task :app:generateDebugResources FROM-CACHE
+> Task :app:extractDeepLinksDebug FROM-CACHE
+> Task :app:validateSigningDebug
+> Task :app:packageDebugResources FROM-CACHE
+> Task :app:parseDebugLocalResources FROM-CACHE
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:checkDebugAarMetadata
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeLibDexDebug FROM-CACHE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets FROM-CACHE
+> Task :app:mapDebugSourceSetPaths
+> Task :app:mergeDebugNativeLibs
+> Task :app:mergeDebugResources FROM-CACHE
+> Task :app:processDebugMainManifest FROM-CACHE
+> Task :app:processDebugManifest FROM-CACHE
+> Task :app:processDebugManifestForPackage FROM-CACHE
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so.
+
+> Task :app:processDebugResources FROM-CACHE
+> Task :app:kspDebugKotlin FROM-CACHE
+> Task :app:mergeExtDexDebug FROM-CACHE
+
+> Task :app:compileDebugKotlin FAILED
+./gradlew : e: file
+:///C:/Users/ghaza/
+OneDrive/Desktop/Pr
+oject2025/WallCoreP
+ro/app/src/main/jav
+a/com/offline/wallc
+orepro/di/Repositor
+yModule.kt:27:80 
+Argument type 
+mismatch: actual 
+type is 'com.offlin
+e.wallcorepro.data.
+repository.Preferen
+ceManager', but 'co
+m.offline.wallcorep
+ro.data.network.Pix
+abayApiService' 
+was expected.
+At line:1 char:1
++ ./gradlew clean 
+assembleDebug 
+--no-daemon > 
+build_log_v3.txt 
+2>&1
++ ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo 
+             : No  
+  tSpecified: (e   
+ : file:///C:/U    
+...' was expec    
+ted.:String) [    
+], RemoteExcep    
+tion
+    + FullyQualifi 
+   edErrorId : Na  
+  tiveCommandErr   
+ or
+ 
+e: file:///C:/Users
+/ghaza/OneDrive/Des
+ktop/Project2025/Wa
+llCorePro/app/src/m
+ain/java/com/offlin
+e/wallcorepro/di/Re
+positoryModule.kt:2
+7:80 No value 
+passed for 
+parameter 'preferen
+ceManager'.
+
+[Incubating] Problems report is available at: file:///C:/Users/ghaza/OneDrive/Desktop/Project2025/WallCorePro/build/reports/problems/problems-report.html
+
+FAILURE: Build 
+failed with an 
+exception.
+
+* What went wrong:
+Execution failed 
+for task ':app:comp
+ileDebugKotlin'.
+> A failure 
+occurred while 
+executing org.jetbr
+ains.kotlin.compile
+rRunner.GradleCompi
+lerRunnerWithWorker
+s$GradleKotlinCompi
+lerWorkAction
+   > Compilation 
+error. See log for 
+more details
+
+* Try:
+> Run with 
+--stacktrace 
+option to get the 
+stack trace.
+> Run with --info 
+or --debug option 
+to get more log 
+output.
+> Run with --scan 
+to generate a 
+Build Scan 
+(powered by 
+Develocity).
+> Get more help at 
+https://help.gradle
+.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 56s
+33 actionable tasks: 15 executed, 18 from cache
+Configuration cache entry stored.

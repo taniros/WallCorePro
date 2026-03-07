@@ -1,0 +1,15 @@
+# Render.com Blueprint – WallCorePro API
+# Deploy: render.com → New → Blueprint → Connect repo → Select this file
+# Auto-deploys on every git push. Add PIXABAY_API_KEY in Render dashboard.
+services:
+  - type: web
+    name: wallcorepro-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PIXABAY_API_KEY
+        sync: false
+      - key: UNSPLASH_ACCESS_KEY
+        sync: false  # Optional: more variety. Get at unsplash.com/developers

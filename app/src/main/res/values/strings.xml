@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">Morning &amp; Night Wallpapers</string>
+    <string name="app_name_short">MorningWalls</string>
+    <string name="app_description">Beautiful Good Morning &amp; Good Night wallpapers for your phone</string>
+
+    <!-- Home Screen -->
+    <string name="tab_latest">Latest</string>
+    <string name="tab_trending">Trending</string>
+    <string name="search_hint">Search wallpapers…</string>
+    <string name="new_wallpapers_banner">%1$d new wallpapers! Tap to see</string>
+    <string name="refresh">Refresh</string>
+
+    <!-- Greeting labels -->
+    <string name="greeting_morning">☀️ Good Morning!</string>
+    <string name="greeting_night">🌙 Good Night!</string>
+    <string name="greeting_afternoon">🌅 Beautiful Day!</string>
+    <string name="greeting_subtitle_morning">Start your day with a beautiful wallpaper</string>
+    <string name="greeting_subtitle_night">End your day with a peaceful wallpaper</string>
+
+    <!-- Detail Screen -->
+    <string name="set_wallpaper">Set Wallpaper</string>
+    <string name="set_home">🏠 Home Screen</string>
+    <string name="set_lock">🔒 Lock Screen</string>
+    <string name="set_both">✨ Both Screens</string>
+    <string name="wallpaper_set_success">✓ Wallpaper set successfully!</string>
+    <string name="share_wallpaper">Share wallpaper</string>
+    <string name="download_wallpaper">Download</string>
+    <string name="save_favorite">Save</string>
+    <string name="saved_favorite">Saved</string>
+    <string name="photo_by">📷 %1$s</string>
+
+    <!-- Favorites -->
+    <string name="favorites_empty_title">No Saved Wallpapers</string>
+    <string name="favorites_empty_subtitle">Tap the ❤️ on any wallpaper to save it here</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="dark_mode_desc">Enable dark theme</string>
+    <string name="auto_wallpaper">Auto-Change Wallpaper</string>
+    <string name="auto_wallpaper_desc">Automatically change wallpaper on schedule</string>
+    <string name="interval_label">Change every: %1$s</string>
+    <string name="wallpaper_target">Set wallpaper on</string>
+    <string name="daily_notification">Daily Notifications</string>
+    <string name="daily_notification_desc">Morning &amp; night wallpaper reminders</string>
+
+    <!-- Notifications -->
+    <string name="notif_morning_title">☀️ Good Morning!</string>
+    <string name="notif_morning_body">Start your day with a fresh beautiful wallpaper ✨</string>
+    <string name="notif_night_title">🌙 Good Night!</string>
+    <string name="notif_night_body">Set a peaceful wallpaper for a restful night 🌙</string>
+
+    <!-- General -->
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="back">Back</string>
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="no_internet">No internet connection</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="version">Version %1$s</string>
+</resources>
