@@ -4,8 +4,30 @@ import com.offline.wallcorepro.data.model.CategoryListResponse
 import com.offline.wallcorepro.data.model.PexelsResponse
 import com.offline.wallcorepro.data.model.PixabayResponse
 import com.offline.wallcorepro.data.model.WallpaperListResponse
+import kotlinx.serialization.Serializable
 import retrofit2.Response
 import retrofit2.http.*
+
+// ─── AI Backend Proxy (Gemini key stays on server) ────────────────────────────
+@Serializable
+data class AiPromptRequest(val prompt: String)
+
+@Serializable
+data class AiTextResponse(val text: String = "")
+
+@Serializable
+data class AiKeywordsResponse(val keywords: List<String> = emptyList())
+
+interface AiApiService {
+    @POST("ai/generate-wish")
+    suspend fun generateWish(@Body body: AiPromptRequest): Response<AiTextResponse>
+
+    @POST("ai/rephrase-wish")
+    suspend fun rephraseWish(@Body body: AiPromptRequest): Response<AiTextResponse>
+
+    @POST("ai/generate-keywords")
+    suspend fun generateKeywords(@Body body: AiPromptRequest): Response<AiKeywordsResponse>
+}
 
 interface WallpaperApiService {
 
@@ -69,3 +91,4 @@ interface PixabayApiService {
         @Query("editors_choice") editorsChoice: Boolean = false
     ): Response<PixabayResponse>
 }
+

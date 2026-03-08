@@ -166,9 +166,6 @@ dependencies {
     // AdMob
     implementation(libs.play.services.ads)
 
-    // Gemini AI
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-
     // OneSignal Push Notifications
     implementation(libs.onesignal)
 

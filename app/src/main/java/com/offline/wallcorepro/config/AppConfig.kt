@@ -241,23 +241,13 @@ object AppConfig {
     const val API_TIMEOUT_SECONDS  = 30L
     const val MAX_RETRIES          = 3
 
-    // ─── Multi-Source Integration (License-Safe Strategy) ──────────────────
-    // BACKEND_ONLY = true: App fetches ONLY from your backend. No Pexels/Pixabay in app.
+    // ─── Backend-Only Strategy (License-Safe) ──────────────────────────────
+    // App fetches ONLY from your backend. No Pexels/Pixabay in app.
     // Play Store cannot see image sources. Deploy backend from /backend folder first.
-    const val USE_BACKEND_ONLY   = true   // RECOMMENDED: 100% Play-safe, no third-party APIs in app
-    const val USE_PEXELS_API     = false  // DISABLED: Pexels forbids wallpaper apps
-    const val USE_PIXABAY_API    = false  // OFF when USE_BACKEND_ONLY (backend fetches from Pixabay)
-    
-    const val PEXELS_API_KEY     = "HnnfqrCtFamQpgLqVUmQRKwI2fvG8JnUeEYerLBAr9voSNobj9o5DKld"
-    const val PEXELS_BASE_URL    = "https://api.pexels.com/v1/"
-    
-    // Placeholder - User should replace with their own Pixabay Key
-    const val PIXABAY_API_KEY    = "54842696-d4ae6b57d9c83c77f03263f7f"
-    const val PIXABAY_BASE_URL   = "https://pixabay.com/api/"
+    const val USE_BACKEND_ONLY = true
 
-    // ─── Gemini AI Integration ──────────────────────────────────────────
-    const val GEMINI_API_KEY     = "AIzaSyDdkOtRmV7TbQ2gimZjNJoHzkvhdo33EaY" // Free tier available
-    const val GEMINI_MODEL       = "gemini-2.0-flash"
+    // ─── AI via Backend ──────────────────────────────────────────────────
+    // Gemini key stays on server (Render env). App calls /v1/ai/* only.
 
     // ─── Cache & Sync ────────────────────────────────────────────────
     const val INITIAL_WALLPAPER_COUNT    = 80
@@ -266,7 +256,7 @@ object AppConfig {
     const val CACHE_DISK_SIZE_MB         = 500L
     const val CACHE_MEMORY_SIZE_MB       = 100L
     const val SYNC_INTERVAL_HOURS        = 3L
-    const val FRESHNESS_THRESHOLD_HOURS  = 1L
+    const val FRESHNESS_THRESHOLD_HOURS  = 6L  // Was 1: reduced refresh frequency to stabilize list
 
     // ─── Feature Flags ───────────────────────────────────────────────
     const val FEATURE_FAVORITES         = true
@@ -349,7 +339,7 @@ object AppConfig {
     const val RC_BANNER_AD_ENABLED    = true
     const val RC_APP_OPEN_AD_ENABLED  = true
     const val RC_SHOW_NEW_BADGE       = true
-    const val RC_FORCE_FRESH_ON_OPEN  = true
+    const val RC_FORCE_FRESH_ON_OPEN  = false  // Was true: cleared cache on every refresh, caused list to keep changing
     const val RC_PREMIUM_ENABLED      = false
 
     // ─── Automatic Promotion Strategy ────────────────────────────────────────

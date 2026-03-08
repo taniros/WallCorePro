@@ -93,7 +93,6 @@ class HomeViewModel @Inject constructor(
     }
 
     init {
-        loadCategories()
         loadTrending()
         checkNewWallpapers()
         initialSync()
@@ -150,28 +149,26 @@ class HomeViewModel @Inject constructor(
 
     private fun loadTrending() {
         viewModelScope.launch {
-            getTrendingWallpapersUseCase(AppConfig.NICHE_TYPE).collect { trending ->
-                _uiState.update { it.copy(
-                    trendingWallpapers = trending,
-                    heroWallpaper      = trending.firstOrNull() ?: it.heroWallpaper
-                ) }
-            }
-        }
-    }
-
-    private fun loadCategories() {
-        viewModelScope.launch {
-            getCategoriesUseCase(AppConfig.NICHE_TYPE).collect { categories ->
-                _uiState.update { it.copy(categories = categories) }
-            }
+            getTrendingWallpapersUseCase(AppConfig.NICHE_TYPE)
+                .distinctUntilChanged { a, b -> a.map { it.id }.toSet() == b.map { it.id }.toSet() }
+                .debounce(400)
+                .collect { trending ->
+                    _uiState.update { it.copy(
+                        trendingWallpapers = trending,
+                        heroWallpaper      = trending.firstOrNull() ?: it.heroWallpaper
+                    ) }
+                }
         }
     }
 
     private fun observeCategories() {
         viewModelScope.launch {
-            getCategoriesUseCase(AppConfig.NICHE_TYPE).collect { categories ->
-                _uiState.update { it.copy(categories = categories) }
-            }
+            getCategoriesUseCase(AppConfig.NICHE_TYPE)
+                .distinctUntilChanged { a, b -> a.map { it.id }.toSet() == b.map { it.id }.toSet() }
+                .debounce(400)
+                .collect { categories ->
+                    _uiState.update { it.copy(categories = categories) }
+                }
         }
     }
 

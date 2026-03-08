@@ -1,6 +1,5 @@
 package com.offline.wallcorepro.data.network
 
-import com.google.ai.client.generativeai.GenerativeModel
 import com.offline.wallcorepro.config.AppConfig
 import com.offline.wallcorepro.config.AppConfig.QuoteCategory
 import com.offline.wallcorepro.data.local.WishQuotePool
@@ -11,12 +10,9 @@ import javax.inject.Singleton
 import timber.log.Timber
 
 @Singleton
-class AiService @Inject constructor() {
-
-    private val generativeModel = GenerativeModel(
-        modelName = AppConfig.GEMINI_MODEL,
-        apiKey    = AppConfig.GEMINI_API_KEY
-    )
+class AiService @Inject constructor(
+    private val aiApiService: AiApiService
+) {
 
     /**
      * Generates a personalised wish based on niche (Morning / Night) and mood.
@@ -77,13 +73,14 @@ class AiService @Inject constructor() {
                 ── End ──────────────────────────────────────────────────────────────────────
             """.trimIndent()
 
-            val response = generativeModel.generateContent(prompt)
-            val raw  = response.text?.trim() ?: throw Exception("Empty AI response")
+            val response = aiApiService.generateWish(AiPromptRequest(prompt))
+            if (!response.isSuccessful) throw Exception("API ${response.code()}")
+            val raw  = response.body()?.text?.trim() ?: throw Exception("Empty AI response")
             val text = raw.trimStart('"', '"', '\'', '«').trimEnd('"', '"', '\'', '»').trim()
             Result.success(text)
 
         } catch (e: Exception) {
-            Timber.w("Gemini unavailable (${e.message?.take(60)}) — serving local fallback")
+            Timber.w("AI backend unavailable (${e.message?.take(60)}) — serving local fallback")
             var fallback = WishQuotePool.getFallbackWish(niche, mood)
             if (userName.isNotBlank()) {
                 fallback = fallback.replaceFirst(
@@ -122,8 +119,9 @@ class AiService @Inject constructor() {
                 ── End ──────────────────────────────────────────────────────────────────────
             """.trimIndent()
 
-            val response = generativeModel.generateContent(prompt)
-            val raw  = response.text?.trim() ?: throw Exception("Empty AI response")
+            val response = aiApiService.rephraseWish(AiPromptRequest(prompt))
+            if (!response.isSuccessful) throw Exception("API ${response.code()}")
+            val raw  = response.body()?.text?.trim() ?: throw Exception("Empty AI response")
             val text = raw.trimStart('"', '"', '\'', '«').trimEnd('"', '"', '\'', '»').trim()
             Result.success(text)
         } catch (e: Exception) {
@@ -222,9 +220,9 @@ class AiService @Inject constructor() {
                 Rules: NO card text, NO greeting card, ONLY background descriptions.
             """.trimIndent()
 
-            val response = generativeModel.generateContent(prompt)
-            val text     = response.text ?: throw Exception("Empty AI response")
-            val keywords = text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val response = aiApiService.generateKeywords(AiPromptRequest(prompt))
+            if (!response.isSuccessful) throw Exception("API ${response.code()}")
+            val keywords = response.body()?.keywords?.filter { it.isNotEmpty() } ?: throw Exception("Empty AI response")
             Result.success(keywords)
 
         } catch (e: Exception) {

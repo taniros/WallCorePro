@@ -2,10 +2,12 @@
  * WallCorePro Backend API
  * 
  * Fetches wallpapers from Pixabay + Unsplash (server-side only).
- * App never touches image APIs directly = Play Store compliant.
+ * AI wishes via Gemini (server-side only).
+ * App never touches image/AI APIs directly = Play Store compliant.
  * 
  * Required: PIXABAY_API_KEY
  * Optional: UNSPLASH_ACCESS_KEY (adds more variety)
+ * Optional: GEMINI_API_KEY (for AI wish generation)
  */
 
 const express = require('express');
@@ -15,6 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PIXABAY_KEY = process.env.PIXABAY_API_KEY;
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
 if (!PIXABAY_KEY) {
   console.error('FATAL: Set PIXABAY_API_KEY in environment. Get free key at https://pixabay.com/api/docs/');
@@ -23,11 +26,16 @@ if (!PIXABAY_KEY) {
 if (UNSPLASH_KEY) {
   console.log('Unsplash enabled – more wallpaper variety');
 }
+if (GEMINI_KEY) {
+  console.log('Gemini AI enabled – wish generation via backend');
+}
 
-// CORS for app requests
+// JSON body parsing + CORS for app requests
+app.use(express.json());
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Methods', 'GET, POST');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
 
@@ -161,7 +169,8 @@ app.get('/v1/wallpapers', async (req, res) => {
         ...px.map(h => toWallpaperDto(h, category, niche)),
         ...us.map(p => toWallpaperDtoFromUnsplash(p, category, niche))
       ];
-      hits.sort(() => Math.random() - 0.5);
+      // Deterministic sort by id — stable order for paging (no random shuffle)
+      hits.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     } else {
       const mq = MORNING_QUERIES[pageNum % MORNING_QUERIES.length];
       const aq = AFTERNOON_QUERIES[pageNum % AFTERNOON_QUERIES.length];
@@ -189,7 +198,8 @@ app.get('/v1/wallpapers', async (req, res) => {
         ...eveningUs.map(p => toWallpaperDtoFromUnsplash(p, 'Evening Greetings', niche)),
         ...nightUs.map(p => toWallpaperDtoFromUnsplash(p, 'Night Wishes', niche))
       ];
-      hits.sort(() => Math.random() - 0.5);
+      // Deterministic sort by id — stable order for paging (no random shuffle)
+      hits.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     }
 
     res.json({
@@ -230,7 +240,7 @@ app.get('/v1/trending', async (req, res) => {
       ...px.map(h => toWallpaperDto(h, 'Trending', niche)),
       ...us.map(p => toWallpaperDtoFromUnsplash(p, 'Trending', niche))
     ];
-    wallpapers.sort(() => Math.random() - 0.5);
+    wallpapers.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     res.json({ wallpapers, total: wallpapers.length, page: 1, hasNext: false });
   } catch (err) {
     console.error('Trending error:', err);
@@ -265,10 +275,82 @@ app.get('/v1/wallpapers/:id', async (req, res) => {
   }
 });
 
+// ─── Gemini AI Proxy (key stays on server, never in app) ────────────────────
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
+async function callGemini(prompt) {
+  if (!GEMINI_KEY) return null;
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.9, maxOutputTokens: 256 }
+      })
+    });
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return text ? text.trim() : null;
+  } catch (e) {
+    console.warn('Gemini API error:', e.message);
+    return null;
+  }
+}
+
+// POST /v1/ai/generate-wish
+app.post('/v1/ai/generate-wish', async (req, res) => {
+  try {
+    const { niche, mood, userName = '', selectedCategoryKeys = [], variationSeed = 0, tone = 'soft' } = req.body || {};
+    const prompt = req.body.prompt;
+    if (prompt) {
+      const text = await callGemini(prompt);
+      if (text) return res.json({ text });
+    }
+    return res.status(503).json({ error: 'AI unavailable', fallback: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error', fallback: true });
+  }
+});
+
+// POST /v1/ai/rephrase-wish
+app.post('/v1/ai/rephrase-wish', async (req, res) => {
+  try {
+    const { original, tone = 'soft' } = req.body || {};
+    const prompt = req.body.prompt;
+    if (prompt) {
+      const text = await callGemini(prompt);
+      if (text) return res.json({ text });
+    }
+    return res.status(503).json({ error: 'AI unavailable', fallback: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error', fallback: true });
+  }
+});
+
+// POST /v1/ai/generate-keywords
+app.post('/v1/ai/generate-keywords', async (req, res) => {
+  try {
+    const { category, niche } = req.body || {};
+    const prompt = req.body.prompt;
+    if (prompt) {
+      const text = await callGemini(prompt);
+      if (text) {
+        const keywords = text.split(',').map(s => s.trim()).filter(Boolean);
+        return res.json({ keywords });
+      }
+    }
+    return res.status(503).json({ error: 'AI unavailable', keywords: [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error', keywords: [] });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {
   console.log(`WallCorePro API running on port ${PORT}`);
-  console.log(`Endpoints: /v1/wallpapers, /v1/categories, /v1/trending`);
+  console.log(`Endpoints: /v1/wallpapers, /v1/categories, /v1/trending, /v1/ai/*`);
 });

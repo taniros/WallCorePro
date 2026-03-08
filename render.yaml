@@ -14,3 +14,5 @@ services:
         sync: false
       - key: UNSPLASH_ACCESS_KEY
         sync: false  # Optional: more variety. Get at unsplash.com/developers
+      - key: GEMINI_API_KEY
+        sync: false  # For AI wish generation. Get at aistudio.google.com
