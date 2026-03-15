@@ -59,6 +59,9 @@ interface WallpaperDao {
     @Query("SELECT COUNT(*) FROM wallpapers WHERE niche = :niche")
     suspend fun getWallpaperCount(niche: String): Int
 
+    @Query("SELECT COUNT(*) FROM wallpapers WHERE niche = :niche AND category = :category")
+    suspend fun getCategoryWallpaperCount(niche: String, category: String): Int
+
     @Query("SELECT COUNT(*) FROM wallpapers WHERE niche = :niche AND createdAt > :since")
     suspend fun getNewWallpaperCount(niche: String, since: Long): Int
 
