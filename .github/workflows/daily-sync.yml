@@ -1,0 +1,58 @@
+name: Refresh Wallpaper Cache
+
+# Triggers a full cache rebuild on the backend every 6 hours.
+# The backend fetches fresh wallpapers from Pixabay + Unsplash + Pexels,
+# deduplicates them, and stores them in memory so every app request gets
+# a response in < 50 ms with no live API round-trips.
+#
+# Setup (one-time):
+#   1. Go to your GitHub repo → Settings → Secrets → Actions
+#   2. Add secret: ADMIN_SECRET_KEY = (same value as your Render env var)
+#   3. On Render dashboard → Environment: add ADMIN_SECRET_KEY = <any long random string>
+#      e.g. "wc_sync_8f3k2p9x" — keep it secret, it protects the sync endpoint
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'    # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+  workflow_dispatch:           # Allow manual trigger from Actions tab
+
+jobs:
+  sync:
+    name: Trigger cache rebuild
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger wallpaper cache rebuild
+        env:
+          ADMIN_SECRET_KEY: ${{ secrets.ADMIN_SECRET_KEY }}
+        run: |
+          echo "Triggering cache rebuild at $(date -u)"
+          # Build auth header only when the secret is actually configured
+          AUTH_HEADER=""
+          if [ -n "$ADMIN_SECRET_KEY" ]; then
+            AUTH_HEADER="-H \"x-admin-key: $ADMIN_SECRET_KEY\""
+          fi
+          HTTP_STATUS=$(curl -s -o /tmp/sync.json -w "%{http_code}" \
+            -X POST \
+            $AUTH_HEADER \
+            -H "Content-Type: application/json" \
+            --max-time 30 \
+            https://wallcorepro-api.onrender.com/v1/admin/sync)
+          echo "HTTP status: $HTTP_STATUS"
+          cat /tmp/sync.json || true
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✓ Cache rebuild triggered successfully"
+          else
+            echo "⚠ Sync returned $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Verify server is healthy after sync
+        run: |
+          sleep 5
+          HTTP_STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" \
+            --max-time 15 \
+            https://wallcorepro-api.onrender.com/health)
+          echo "Health check status: $HTTP_STATUS"
+          cat /tmp/health.json || true

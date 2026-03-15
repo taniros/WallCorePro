@@ -1,0 +1,37 @@
+name: Keep Backend Alive
+
+# Render free-tier sleeps after 15 minutes of inactivity — a cold start takes
+# 30-60 seconds which is the #1 cause of slow wallpaper loading for users.
+# This workflow pings /health every 14 minutes so the server NEVER sleeps,
+# eliminating the cold start completely for every user, 24 hours a day.
+#
+# Cost: ~0 minutes on public repos (unlimited).
+#       On private repos: ~43 pings/day × 0.5 min ≈ 650 min/month (under 2,000 free).
+
+on:
+  schedule:
+    - cron: '*/14 * * * *'   # Every 14 minutes (Render sleeps after 15 min)
+  workflow_dispatch:           # Allow manual trigger from Actions tab
+
+jobs:
+  ping:
+    name: Ping health endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Wake server
+        run: |
+          echo "Pinging backend at $(date -u)"
+          HTTP_STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" \
+            --max-time 60 \
+            --retry 2 \
+            --retry-delay 5 \
+            https://wallcorepro-api.onrender.com/health)
+          echo "HTTP status: $HTTP_STATUS"
+          cat /tmp/health.json || true
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✓ Server is alive and warm"
+          else
+            echo "⚠ Server returned $HTTP_STATUS — it will be warm for the next ping"
+          fi
