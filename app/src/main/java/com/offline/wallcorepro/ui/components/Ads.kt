@@ -49,15 +49,58 @@ fun BannerAdView(modifier: Modifier = Modifier) {
         factory = { ctx ->
             val displayMetrics = ctx.resources.displayMetrics
             val adWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
-            val adSize   = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(ctx, adWidthDp)
+            val adSize   = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(ctx, adWidthDp)
 
             AdView(ctx).apply {
-                adUnitId = AppConfig.ADMOB_BANNER_ID
+                adUnitId = AppConfig.ADMOB_INLINE_BANNER_ID
                 setAdSize(adSize)
                 loadAd(AdRequest.Builder().build())
                 adListener = object : AdListener() {
                     override fun onAdFailedToLoad(error: LoadAdError) {
                         Timber.w("BannerAd failed to load: ${error.message}")
+                    }
+                }
+            }
+        }
+    )
+}
+
+// ─── Inline Adaptive Banner Ad ────────────────────────────────────────────────
+
+/**
+ * Inline Adaptive Banner — designed to live INSIDE scrollable content (feeds, grids).
+ *
+ * Key differences from [BannerAdView] (anchored):
+ *  • Uses [AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize] — AdMob picks the
+ *    optimal height (up to the max supplied) rather than capping at ~90 dp.
+ *  • Taller slots earn significantly more per impression because they give advertisers
+ *    more creative space (video, rich-media) → higher-paying demand competes for the slot.
+ *  • Must sit inside a LazyColumn/LazyVerticalGrid item, never fixed to screen edge.
+ *
+ * Placement: one ad every [AppConfig.INLINE_BANNER_INTERVAL] wallpaper cards, offset
+ * from native ads so the two ad types never appear on the same index.
+ */
+@Composable
+fun InlineAdaptiveBannerAd(modifier: Modifier = Modifier) {
+    if (!AppConfig.ADS_ENABLED || !RemoteConfigManager.inlineBannerEnabled) return
+
+    val context = LocalContext.current
+
+    AndroidView(
+        modifier = modifier.fillMaxWidth(),
+        factory  = { ctx ->
+            val displayMetrics = ctx.resources.displayMetrics
+            val adWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
+            // Inline adaptive — no fixed height cap; AdMob returns the best-fit size
+            val adSize = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(ctx, adWidthDp)
+
+            AdView(ctx).apply {
+                adUnitId = AppConfig.ADMOB_INLINE_BANNER_ID
+                setAdSize(adSize)
+                loadAd(AdsManager.getAdRequest())
+                adListener = object : AdListener() {
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        Timber.w("InlineBannerAd failed: ${error.message}")
                     }
                 }
             }
