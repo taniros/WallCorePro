@@ -728,9 +728,11 @@ object WishQuotePool {
         val activeCats = buildActiveCategoryList(selectedCategoryKeys)
         val primaryCat = mapWallpaperCategoryToQuoteCategory(wallpaperCategory)
         val idHash     = kotlin.math.abs(wallpaperId.hashCode())
-        val chosen     = if (primaryCat != null && primaryCat in activeCats) primaryCat
-                         else activeCats[idHash % activeCats.size]
-        val pool       = poolByCategory[chosen] ?: poolByCategory[QuoteCategory.GOOD_MORNING]!!
+        // Category-context always wins: use the wallpaper's mapped category pool even if
+        // the user hasn't enabled that quote category. User preference only applies when
+        // no category-specific mapping exists (primaryCat == null).
+        val chosen = primaryCat ?: activeCats[idHash % activeCats.size]
+        val pool   = poolByCategory[chosen] ?: poolByCategory[QuoteCategory.GOOD_MORNING]!!
         return pool[idHash % pool.size]
     }
 
@@ -745,8 +747,7 @@ object WishQuotePool {
     ): String {
         val activeCats = buildActiveCategoryList(selectedCategoryKeys)
         val primaryCat = mapWallpaperCategoryToQuoteCategory(wallpaperCategory)
-        val chosen     = if (primaryCat != null && primaryCat in activeCats) primaryCat
-                         else activeCats.randomOrNull() ?: QuoteCategory.GOOD_MORNING
+        val chosen     = primaryCat ?: activeCats.randomOrNull() ?: QuoteCategory.GOOD_MORNING
         val pool       = poolByCategory[chosen] ?: poolByCategory[QuoteCategory.GOOD_MORNING]!!
         return nextFromDeck(chosen.key, pool)
     }
