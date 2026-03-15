@@ -303,6 +303,29 @@ class WallpaperRepositoryImpl @Inject constructor(
         Timber.d("clearFeedCache: non-favourite wallpapers + remote keys cleared for niche=$niche")
     }
 
+    override suspend fun warmUpCategories(niche: String) = coroutineScope {
+        val categories = AppConfig.CATEGORY_QUERY_MAP.keys.toList()
+        // Batch into groups of 3 — avoids saturating the Render free-tier with 14
+        // simultaneous requests while still being much faster than sequential fetching.
+        categories.chunked(3).forEach { batch ->
+            batch.map { category ->
+                async {
+                    try {
+                        val count = wallpaperDao.getCategoryWallpaperCount(niche, category)
+                        if (count < AppConfig.PAGE_SIZE) {
+                            syncCategoryWallpapers(niche, category)
+                            Timber.d("warmUpCategories[$category]: fetched (was $count in DB)")
+                        } else {
+                            Timber.d("warmUpCategories[$category]: skipped ($count cached)")
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e, "warmUpCategories[$category] failed (non-critical)")
+                    }
+                }
+            }.map { it.await() }
+        }
+    }
+
     private fun getNicheCategories(niche: String): List<com.offline.wallcorepro.data.local.entity.CategoryEntity> {
         val categories = when (niche.uppercase()) {
             "GOOD_MORNING" -> AppConfig.NICHE_CATEGORIES

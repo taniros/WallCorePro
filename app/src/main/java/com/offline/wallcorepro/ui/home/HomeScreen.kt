@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +44,7 @@ import com.offline.wallcorepro.ui.components.HeroWallpaperCard
 import com.offline.wallcorepro.ui.components.ShimmerWallpaperCard
 import com.offline.wallcorepro.ui.components.WallpaperCard
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // Staggered card heights for Pinterest-like layout
 private val cardHeightCycle = listOf(250.dp, 200.dp, 235.dp, 215.dp, 265.dp)
@@ -77,6 +79,44 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val wallpapers = viewModel.wallpapersFeed.collectAsLazyPagingItems()
 
+    // ── Empty-state debounce ──────────────────────────────────────────────
+    // During pager transitions (wrapAroundScroll / seed change) itemCount
+    // briefly hits 0 with refresh=NotLoading. Wait 400 ms before committing
+    // to the empty-state so those flashes show shimmer instead.
+    var showEmptyState by remember { mutableStateOf(false) }
+    LaunchedEffect(wallpapers.itemCount) {
+        if (wallpapers.itemCount == 0) {
+            delay(400)
+            showEmptyState = true
+        } else {
+            showEmptyState = false
+        }
+    }
+
+    // ── Infinite scroll restart ───────────────────────────────────────────────
+    // Paging 3 permanently stops calling APPEND once endOfPaginationReached=true.
+    // We watch for that condition and emit a new sessionSeed in the ViewModel,
+    // which causes flatMapLatest to cancel the old Pager and create a fresh one
+    // starting at a different backend page range — seamless infinite scroll.
+    val appendState = wallpapers.loadState.append
+    LaunchedEffect(appendState) {
+        if (appendState is androidx.paging.LoadState.NotLoading &&
+            appendState.endOfPaginationReached
+        ) {
+            viewModel.wrapAroundScroll()
+        }
+    }
+
+    // ── User-initiated refresh tracking ─────────────────────────────────────
+    // Stays true from the moment the user pulls/taps refresh until the pager
+    // finishes its network load — keeps the spinner visible for the full cycle.
+    var isUserRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(wallpapers.loadState.refresh) {
+        if (wallpapers.loadState.refresh is LoadState.NotLoading) {
+            isUserRefreshing = false
+        }
+    }
+
     var searchQuery by remember { mutableStateOf("") }
     var showSearch  by remember { mutableStateOf(false) }
 
@@ -99,9 +139,61 @@ fun HomeScreen(
     }
 
     val context = LocalContext.current
+
+    // ── Proactive image prefetch ──────────────────────────────────────────────
+    // Every time the paging list grows (new page loaded from DB/network), we
+    // immediately enqueue the thumbnail URLs of the freshly-added items into
+    // Coil.  Coil checks its memory/disk cache first (O(1)) — already-cached
+    // items cost nothing.  Only genuinely new URLs start a background download,
+    // so by the time those cards scroll into the viewport the images are already
+    // in the disk cache and appear instantly instead of loading on demand.
+    val coilLoader = remember(context) { coil.Coil.imageLoader(context) }
+    LaunchedEffect(wallpapers.itemCount) {
+        if (wallpapers.itemCount == 0) return@LaunchedEffect
+        // Prefetch the last (PAGE_SIZE * 3) items — 3 pages ahead.
+        // Taking only the tail avoids re-enqueueing thousands of already-cached items
+        // as the paging list grows to 2000+ entries.
+        wallpapers.itemSnapshotList.items
+            // 2 pages ahead is enough — shrinking from 3 avoids re-enqueueing
+            // 150 items on every page load and reduces redundant cache lookups.
+            .takeLast(AppConfig.PAGE_SIZE * 2)
+            .forEach { wallpaper ->
+                val url = wallpaper.thumbnailUrl.ifEmpty { wallpaper.imageUrl }
+                if (url.isBlank()) return@forEach
+                coilLoader.enqueue(
+                    coil.request.ImageRequest.Builder(context)
+                        .data(url)
+                        .size(320, 480)
+                        .memoryCacheKey(url)
+                        .diskCacheKey(url)
+                        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                        // Must match WallpaperCard: same bitmap config = same cache entry.
+                        .allowRgb565(true)
+                        .build()
+                )
+            }
+    }
+
+    val coroutineScope    = rememberCoroutineScope()
+    val configuration     = LocalConfiguration.current
+    // Material Design adaptive breakpoints:
+    //   < 600 dp  → compact phone   → 2 columns
+    //   600–839 dp → medium (foldable / small tablet / landscape phone) → 3 columns
+    //   ≥ 840 dp  → expanded (large tablet) → 4 columns
+    val gridColumns = when {
+        configuration.screenWidthDp >= 840 -> 4
+        configuration.screenWidthDp >= 600 -> 3
+        else                               -> 2
+    }
     val pullToRefreshState = rememberPullToRefreshState()
     val gridState = rememberLazyStaggeredGridState()
     var lastInterstitialScrollIndex by remember { mutableStateOf(0) }
+
+    // Show scroll-to-top FAB only after the user has scrolled past the header items.
+    // derivedStateOf ensures recomposition fires only when the boolean flips (not on
+    // every scroll pixel), keeping this completely free of frame-budget impact.
+    val showScrollToTop by remember { derivedStateOf { gridState.firstVisibleItemIndex > 3 } }
 
     // Interstitial on scroll — every N wallpapers to avoid OOM restart frustration
     LaunchedEffect(gridState.firstVisibleItemIndex) {
@@ -118,6 +210,28 @@ fun HomeScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = showScrollToTop,
+                enter   = scaleIn(animationSpec = tween(200)) + fadeIn(animationSpec = tween(200)),
+                exit    = scaleOut(animationSpec = tween(150)) + fadeOut(animationSpec = tween(150))
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch { gridState.animateScrollToItem(0) }
+                    },
+                    shape          = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor   = MaterialTheme.colorScheme.onPrimary,
+                    elevation      = FloatingActionButtonDefaults.elevation(6.dp)
+                ) {
+                    Icon(
+                        imageVector        = Icons.Filled.KeyboardArrowUp,
+                        contentDescription = "Scroll to top"
+                    )
+                }
+            }
+        },
         topBar = {
             HomeTopBar(
                 appName             = AppConfig.APP_NAME_SHORT,
@@ -130,8 +244,8 @@ fun HomeScreen(
                     if (!showSearch) { searchQuery = ""; viewModel.onSearch("") }
                 },
                 onRefresh           = {
+                    isUserRefreshing = true
                     viewModel.refresh()
-                    wallpapers.refresh()
                     if (com.offline.wallcorepro.BuildConfig.DEBUG) {
                         val activity = context as? android.app.Activity
                         activity?.let { AdsManager.showInterstitialIfReady(it) }
@@ -143,17 +257,17 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         PullToRefreshBox(
-            isRefreshing = uiState.isLoading,
+            isRefreshing = isUserRefreshing || uiState.isLoading,
             onRefresh = {
+                isUserRefreshing = true
                 viewModel.refresh()
-                wallpapers.refresh()
             },
             state = pullToRefreshState,
             modifier = Modifier.padding(paddingValues),
             indicator = {
                 PullToRefreshDefaults.Indicator(
                     state           = pullToRefreshState,
-                    isRefreshing    = uiState.isLoading,
+                    isRefreshing    = isUserRefreshing || uiState.isLoading,
                     modifier        = Modifier.align(Alignment.TopCenter),
                     containerColor  = MaterialTheme.colorScheme.primaryContainer,
                     color           = MaterialTheme.colorScheme.primary
@@ -163,7 +277,7 @@ fun HomeScreen(
             // ── Single staggered grid for everything — scroll naturally ──
             LazyVerticalStaggeredGrid(
                 state                 = gridState,
-                columns               = StaggeredGridCells.Fixed(2),
+                columns               = StaggeredGridCells.Fixed(gridColumns),
                 modifier              = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalItemSpacing   = 8.dp,
@@ -261,9 +375,14 @@ fun HomeScreen(
                 }
 
                 // ── 6b. Native Ad (Full Width) ─────────────────────────────
-                if (AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.nativeAdEnabled) {
+                // Only show when wallpapers are loaded — avoids "just ads" view
+                // on first open while the server is waking up (cold start).
+                if (AppConfig.ADS_ENABLED &&
+                    com.offline.wallcorepro.util.RemoteConfigManager.nativeAdEnabled &&
+                    wallpapers.itemCount > 0
+                ) {
                     item(span = StaggeredGridItemSpan.FullLine) {
-                        Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
+                        Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                             com.offline.wallcorepro.ui.components.NativeAdCard()
                         }
                     }
@@ -272,21 +391,25 @@ fun HomeScreen(
                 // ── 7. Main Grid Content ───────────────────────────────────
                 when (uiState.selectedTab) {
                     HomeTab.LATEST -> {
-                        if (wallpapers.loadState.refresh is LoadState.Loading) {
-                            items(8) { i ->
-                                ShimmerWallpaperCard(
-                                    height   = cardHeightCycle[i % cardHeightCycle.size],
-                                    modifier = Modifier.padding(4.dp)
-                                )
-                            }
-                        } else if (wallpapers.itemCount == 0) {
-                            item(span = StaggeredGridItemSpan.FullLine) {
-                                if (searchQuery.isNotBlank()) {
-                                    SearchEmptyState(query = searchQuery, onClear = {
-                                        searchQuery = ""; viewModel.onSearch("")
-                                    })
-                                } else {
-                                    EmptyWallpapersState(onRetry = { viewModel.refresh() })
+                        if (wallpapers.itemCount == 0) {
+                            // Show shimmer while loading OR during the 400 ms debounce;
+                            // only commit to the empty-state once both conditions clear.
+                            if (wallpapers.loadState.refresh is LoadState.Loading || !showEmptyState) {
+                                items(8) { i ->
+                                    ShimmerWallpaperCard(
+                                        height   = cardHeightCycle[i % cardHeightCycle.size],
+                                        modifier = Modifier.padding(4.dp)
+                                    )
+                                }
+                            } else {
+                                item(span = StaggeredGridItemSpan.FullLine) {
+                                    if (searchQuery.isNotBlank()) {
+                                        SearchEmptyState(query = searchQuery, onClear = {
+                                            searchQuery = ""; viewModel.onSearch("")
+                                        })
+                                    } else {
+                                        EmptyWallpapersState(onRetry = { viewModel.refresh() })
+                                    }
                                 }
                             }
                         } else {
@@ -299,16 +422,20 @@ fun HomeScreen(
                                 span  = { index ->
                                     val isNativeAd = AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.nativeAdEnabled &&
                                                      (index + 1) % com.offline.wallcorepro.util.RemoteConfigManager.nativeAdInterval == 0
+                                    val isInlineBanner = AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.inlineBannerEnabled &&
+                                                         (index + 1) % AppConfig.INLINE_BANNER_INTERVAL == 0
                                     val isPromoCard = AppConfig.FEATURE_CROSS_PROMOTION &&
                                                       activePromos.isNotEmpty() &&
                                                       AppConfig.PROMO_IN_FEED_INTERVAL > 0 &&
                                                       (index + 1) % AppConfig.PROMO_IN_FEED_INTERVAL == 0
-                                    if (isNativeAd || isPromoCard) StaggeredGridItemSpan.FullLine
+                                    if (isNativeAd || isInlineBanner || isPromoCard) StaggeredGridItemSpan.FullLine
                                     else StaggeredGridItemSpan.SingleLane
                                 }
                             ) { index ->
                                 val isNativeAd = AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.nativeAdEnabled &&
                                                  (index + 1) % com.offline.wallcorepro.util.RemoteConfigManager.nativeAdInterval == 0
+                                val isInlineBanner = AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.inlineBannerEnabled &&
+                                                     (index + 1) % AppConfig.INLINE_BANNER_INTERVAL == 0
                                 val isPromoCard = AppConfig.FEATURE_CROSS_PROMOTION &&
                                                   activePromos.isNotEmpty() &&
                                                   AppConfig.PROMO_IN_FEED_INTERVAL > 0 &&
@@ -317,6 +444,9 @@ fun HomeScreen(
                                 when {
                                     isNativeAd -> Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                                         com.offline.wallcorepro.ui.components.NativeAdCard()
+                                    }
+                                    isInlineBanner -> Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                                        com.offline.wallcorepro.ui.components.InlineAdaptiveBannerAd()
                                     }
                                     isPromoCard -> {
                                         // Round-robin through the promo apps list
@@ -333,6 +463,11 @@ fun HomeScreen(
                                                 onClick            = { onWallpaperClick(wallpaper.id) },
                                                 onFavoriteToggle   = { w, fav -> viewModel.toggleFavorite(w.id, fav) },
                                                 selectedCategories = uiState.selectedQuoteCategories
+                                            )
+                                        } else {
+                                            ShimmerWallpaperCard(
+                                                height   = cardHeightCycle[index % cardHeightCycle.size],
+                                                modifier = Modifier.padding(4.dp)
                                             )
                                         }
                                     }
@@ -378,7 +513,7 @@ private fun SocialProofBanner() {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
     ) {
@@ -448,7 +583,7 @@ private fun EnhancedGreetingBanner(
     Card(
         modifier  = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         shape     = RoundedCornerShape(28.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
@@ -456,7 +591,7 @@ private fun EnhancedGreetingBanner(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(gradientBrush)
-                .padding(horizontal = 20.dp, vertical = 20.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(0.68f)) {
@@ -1103,3 +1238,4 @@ private fun EmptyWallpapersState(onRetry: () -> Unit) {
         }
     }
 }
+

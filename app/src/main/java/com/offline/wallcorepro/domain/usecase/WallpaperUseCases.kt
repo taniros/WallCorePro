@@ -11,8 +11,11 @@ import javax.inject.Inject
 class GetWallpapersFeedUseCase @Inject constructor(
     private val repository: WallpaperRepository
 ) {
-    operator fun invoke(niche: String = AppConfig.NICHE_TYPE): Flow<PagingData<Wallpaper>> {
-        return repository.getWallpapersFeed(niche)
+    operator fun invoke(
+        niche: String = AppConfig.NICHE_TYPE,
+        seed: Int = 0
+    ): Flow<PagingData<Wallpaper>> {
+        return repository.getWallpapersFeed(niche, seed)
     }
 }
 
@@ -80,6 +83,15 @@ class SyncWallpapersUseCase @Inject constructor(
     }
 }
 
+/** Sync trending from /v1/trending so Today's Pick has data even when main feed is empty */
+class SyncTrendingForHeroUseCase @Inject constructor(
+    private val repository: WallpaperRepository
+) {
+    suspend operator fun invoke(niche: String = AppConfig.NICHE_TYPE): Result<Int> {
+        return repository.syncTrendingForHero(niche)
+    }
+}
+
 class SyncCategoryWallpapersUseCase @Inject constructor(
     private val repository: WallpaperRepository
 ) {
@@ -117,5 +129,21 @@ class RefreshCategoriesUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(niche: String = AppConfig.NICHE_TYPE) {
         repository.refreshCategories(niche)
+    }
+}
+
+class WarmUpFeedUseCase @Inject constructor(
+    private val repository: WallpaperRepository
+) {
+    suspend operator fun invoke(niche: String = AppConfig.NICHE_TYPE, globalSeedBase: Int) {
+        repository.warmUpFeed(niche, globalSeedBase)
+    }
+}
+
+class WarmUpCategoriesUseCase @Inject constructor(
+    private val repository: WallpaperRepository
+) {
+    suspend operator fun invoke(niche: String = AppConfig.NICHE_TYPE) {
+        repository.warmUpCategories(niche)
     }
 }
