@@ -8,7 +8,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WallpaperDao {
 
-    @Query("SELECT * FROM wallpapers WHERE niche = :niche ORDER BY createdAt DESC")
+    // Sort by cachedAt DESC first so every new batch inserted by the RemoteMediator
+    // on REFRESH rises to the top of the feed — the user sees fresh content immediately
+    // after pull-to-refresh without any blank screen.
+    // shuffleKey is the secondary sort so items within the same insertion batch are
+    // still randomly ordered (preventing duplicates looking like a sorted list).
+    @Query("SELECT * FROM wallpapers WHERE niche = :niche ORDER BY cachedAt DESC, shuffleKey")
     fun getWallpapersByNichePaged(niche: String): PagingSource<Int, WallpaperEntity>
 
     @Query("SELECT * FROM wallpapers WHERE niche = :niche ORDER BY createdAt DESC LIMIT :limit")
