@@ -65,7 +65,7 @@ private val bottomNavItems = listOf(
 @Composable
 fun WallCoreNavGraph(
     navController: NavHostController,
-    navUiStateHolder: NavUiStateHolder = hiltViewModel()
+    navUiStateHolder: NavUiStateHolder = remember { NavUiStateHolder() }
 ) {
 
     val onboardingViewModel: OnboardingViewModel = hiltViewModel()
