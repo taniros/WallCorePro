@@ -18,6 +18,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.*
 import androidx.navigation.compose.*
+import com.offline.wallcorepro.config.AppConfig
 import com.offline.wallcorepro.ui.components.BannerAdView
 import com.offline.wallcorepro.ui.components.ExitConfirmationDialog
 import com.offline.wallcorepro.ui.components.InternetNoticeBannerFromContext
@@ -103,8 +104,11 @@ fun WallCoreNavGraph(navController: NavHostController) {
                 enter   = slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn(tween(200)),
                 exit    = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(250)) + fadeOut(tween(200))
             ) {
-                Column {
-                    BannerAdView(modifier = Modifier.fillMaxWidth())
+                Column(modifier = Modifier.padding(top = 2.dp)) {
+                    // Only show banner ad when ads are enabled AND remote config allows it
+                    if (AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.bannerAdEnabled) {
+                        BannerAdView(modifier = Modifier.fillMaxWidth())
+                    }
                     WallCoreBottomNavBar(
                         items        = bottomNavItems,
                         currentRoute = currentRoute,
