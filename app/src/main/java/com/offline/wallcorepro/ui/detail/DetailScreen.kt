@@ -563,7 +563,10 @@ fun DetailScreen(
                 } // end bottom-menu Box
             } // end wallpaper Box
 
-            BannerAdView(modifier = Modifier.fillMaxWidth())
+            // Banner ad with fixed height - prevents oversized ads
+            Box(modifier = Modifier.fillMaxWidth().height(60.dp)) {
+                BannerAdView(modifier = Modifier.fillMaxWidth().height(60.dp))
+            }
         }
     }
 
