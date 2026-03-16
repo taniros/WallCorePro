@@ -139,6 +139,8 @@ fun HomeScreen(
         }
     }
 
+    val context = LocalContext.current
+
     // Notify NavGraph when content is loaded (controls bottom banner visibility)
     LaunchedEffect(wallpapers.itemCount) {
         if (wallpapers.itemCount > 0) {
