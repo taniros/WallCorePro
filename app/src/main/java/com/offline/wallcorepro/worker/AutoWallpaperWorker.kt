@@ -9,6 +9,7 @@ import com.offline.wallcorepro.config.AppConfig
 import com.offline.wallcorepro.data.repository.PreferenceManager
 import com.offline.wallcorepro.domain.model.WallpaperTarget
 import com.offline.wallcorepro.domain.usecase.GetRandomWallpaperUseCase
+import com.offline.wallcorepro.widget.WallpaperWidget
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -48,6 +49,7 @@ class AutoWallpaperWorker @AssistedInject constructor(
             }
 
             Timber.d("AutoWallpaperWorker: Set wallpaper ${wallpaper.id} to $target")
+            WallpaperWidget.updateAll(applicationContext)
             Result.success()
         } catch (e: Exception) {
             Timber.e(e, "AutoWallpaperWorker failed")

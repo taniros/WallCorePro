@@ -86,7 +86,8 @@ class DetailViewModel @Inject constructor(
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val incrementDownloadUseCase: IncrementDownloadUseCase,
     private val preferenceManager: PreferenceManager,
-    private val aiService: AiService
+    private val aiService: AiService,
+    private val appResumeNotifier: com.offline.wallcorepro.util.AppResumeNotifier
 ) : ViewModel() {
 
     private val wallpaperId: String = checkNotNull(savedStateHandle["wallpaperId"])
@@ -94,14 +95,31 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-    init { loadWallpaper() }
+    val preferFullScreen: StateFlow<Boolean> = preferenceManager.detailFullScreenByDefault
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private fun loadWallpaper() {
+    init {
+        loadWallpaper()
+        observeAppResume()
+    }
+
+    private fun observeAppResume() {
+        viewModelScope.launch {
+            appResumeNotifier.appResumed.collect {
+                if (_uiState.value.customText.isBlank()) loadWallpaper(preferNewQuote = true)
+            }
+        }
+    }
+
+    private fun loadWallpaper(preferNewQuote: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val wallpaper     = getWallpaperByIdUseCase(wallpaperId)
-            val selectedCats  = preferenceManager.selectedQuoteCategories.first()
-            val defaultQuote  = WishQuotePool.getStableQuote(wallpaperId, wallpaper?.category ?: "", selectedCats)
+            val selectedCats = preferenceManager.selectedQuoteCategories.first()
+            val defaultQuote  = if (preferNewQuote)
+                WishQuotePool.getNextQuote(selectedCats, wallpaper?.category ?: "")
+            else
+                WishQuotePool.getStableQuote(wallpaperId, wallpaper?.category ?: "", selectedCats)
             var styleIdx      = preferenceManager.overlayStyleIndex.first()
             val streak        = preferenceManager.wishStreak.first()
             val shareLabel    = if (AppConfig.FEATURE_SOCIAL_PROOF)
@@ -203,10 +221,12 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isDownloading = true, downloadWithQuoteTrigger = false) }
             try {
+                val userName = preferenceManager.userName.first()
+                val signature = if (userName.isNotBlank()) "— $userName —" else "— ${AppConfig.APP_NAME} —"
                 val success = withContext(Dispatchers.IO) {
                     val bitmap = BitmapFactory.decodeStream(URL(wallpaper.imageUrl).openStream())
                         ?: return@withContext false
-                    val stamped = applyOverlay(bitmap, quote)
+                    val stamped = applyOverlay(bitmap, quote, signature)
                     val filename = "${AppConfig.APP_NAME_SHORT}_${wallpaper.id}"
                     saveBitmapToPictures(context, stamped, filename)
                 }
@@ -241,10 +261,12 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSharing = true) }
             try {
+                val userName = preferenceManager.userName.first()
+                val signature = if (userName.isNotBlank()) "— $userName —" else "— ${AppConfig.APP_NAME} —"
                 val uri = withContext(Dispatchers.IO) {
                     val bitmap = BitmapFactory.decodeStream(URL(wallpaper.imageUrl).openStream())
                         ?: throw IllegalStateException("Failed to decode wallpaper image")
-                    val stamped    = applyOverlay(bitmap, quote)
+                    val stamped    = applyOverlay(bitmap, quote, signature)
                     val cacheFile  = File(context.cacheDir, "share_wallpaper.jpg")
                     FileOutputStream(cacheFile).use { out ->
                         stamped.compress(Bitmap.CompressFormat.JPEG, 92, out)
@@ -281,11 +303,13 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSharing = true) }
             try {
+                val userName = preferenceManager.userName.first()
+                val signature = if (userName.isNotBlank()) "— $userName —" else "— ${AppConfig.APP_NAME} —"
                 val bitmap   = withContext(Dispatchers.IO) {
                     BitmapFactory.decodeStream(URL(wallpaper.imageUrl).openStream())
                         ?: throw IllegalStateException("Failed to decode wallpaper image")
                 }
-                val stamped  = applyOverlay(bitmap, quote)
+                val stamped  = applyOverlay(bitmap, quote, signature)
                 val file     = java.io.File(context.cacheDir, "wishmagic_wa_${System.currentTimeMillis()}.jpg")
                 file.outputStream().use { stamped.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
                 val uri      = androidx.core.content.FileProvider.getUriForFile(
@@ -346,11 +370,11 @@ class DetailViewModel @Inject constructor(
                 variationSeed        = newCount,
                 tone                 = tone
             ).onSuccess { text ->
-                _uiState.update { it.copy(isAiGenerating = false, greetingText = text, isGreetingEnabled = true) }
+                _uiState.update { it.copy(isAiGenerating = false, greetingText = text, isGreetingEnabled = true, showCustomTextDialog = true) }
             }.onFailure {
                 // Offline / quota hit — serve a fresh local quote so user never gets nothing
                 val fresh = WishQuotePool.getNextQuote(selectedCats, wallpaper.category)
-                _uiState.update { it.copy(isAiGenerating = false, greetingText = fresh, isGreetingEnabled = true) }
+                _uiState.update { it.copy(isAiGenerating = false, greetingText = fresh, isGreetingEnabled = true, showCustomTextDialog = true) }
             }
         }
     }
@@ -378,7 +402,18 @@ class DetailViewModel @Inject constructor(
                         )
                     }
                 }.onFailure {
-                    _uiState.update { it.copy(isRephrasing = false) }
+                    val selectedCats = preferenceManager.selectedQuoteCategories.first()
+                    val category     = _uiState.value.wallpaper?.category ?: ""
+                    val fresh        = WishQuotePool.getNextQuote(selectedCats, category)
+                    _uiState.update {
+                        it.copy(
+                            isRephrasing   = false,
+                            greetingText   = fresh,
+                            customText     = "",
+                            isGreetingEnabled = true,
+                            rephraseSuccess = true
+                        )
+                    }
                 }
         }
     }
@@ -461,10 +496,10 @@ class DetailViewModel @Inject constructor(
      * The watermark is present on ALL shares (clean or not) — it's the app's automatic
      * self-promotion engine. Every wallpaper shared to WhatsApp/Instagram carries the brand.
      */
-    private fun applyOverlay(source: Bitmap, quote: String): Bitmap {
+    private suspend fun applyOverlay(source: Bitmap, quote: String, signature: String): Bitmap {
         val withQuote = if (_uiState.value.shareClean || quote.isBlank())
             source.copy(Bitmap.Config.ARGB_8888, false)
-        else drawQuoteOnBitmap(source, quote)
+        else drawQuoteOnBitmap(source, quote, signature)
         return if (AppConfig.WATERMARK_ENABLED) addBrandWatermark(withQuote) else withQuote
     }
 
@@ -512,19 +547,19 @@ class DetailViewModel @Inject constructor(
      * Renders the quote onto the bitmap using the currently selected [OverlayStyle].
      * Returns a NEW mutable bitmap — the original is not modified.
      */
-    private fun drawQuoteOnBitmap(source: Bitmap, quote: String): Bitmap {
+    private fun drawQuoteOnBitmap(source: Bitmap, quote: String, signature: String): Bitmap {
         val styleIndex = _uiState.value.overlayStyleIndex
         val style      = AppConfig.OverlayStyle.entries.getOrElse(styleIndex) { AppConfig.OverlayStyle.GLOW }
         return when (style) {
-            AppConfig.OverlayStyle.GLOW    -> drawGlowStyle(source, quote)
-            AppConfig.OverlayStyle.MINIMAL -> drawMinimalStyle(source, quote)
-            AppConfig.OverlayStyle.WARM    -> drawWarmStyle(source, quote)
-            AppConfig.OverlayStyle.NEON    -> drawNeonStyle(source, quote)
+            AppConfig.OverlayStyle.GLOW    -> drawGlowStyle(source, quote, signature)
+            AppConfig.OverlayStyle.MINIMAL -> drawMinimalStyle(source, quote, signature)
+            AppConfig.OverlayStyle.WARM    -> drawWarmStyle(source, quote, signature)
+            AppConfig.OverlayStyle.NEON   -> drawNeonStyle(source, quote, signature)
         }
     }
 
     // ── GLOW style: white italic on dark glassmorphism card (default) ──────────
-    private fun drawGlowStyle(source: Bitmap, quote: String): Bitmap {
+    private fun drawGlowStyle(source: Bitmap, quote: String, signature: String): Bitmap {
         val out    = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = android.graphics.Canvas(out)
         val w = out.width.toFloat(); val h = out.height.toFloat()
@@ -554,12 +589,12 @@ class DetailViewModel @Inject constructor(
         })
         var y = boxTop + vPad + lineH * 0.85f
         for (line in lines) { canvas.drawText(line, w / 2f, y, textPaint); y += lineH }
-        canvas.drawText("— ${AppConfig.APP_NAME} —", w / 2f, boxBottom - vPad * 0.6f, badgePaint)
+        canvas.drawText(signature, w / 2f, boxBottom - vPad * 0.6f, badgePaint)
         return out
     }
 
     // ── MINIMAL style: text only, powerful shadow, no box ─────────────────────
-    private fun drawMinimalStyle(source: Bitmap, quote: String): Bitmap {
+    private fun drawMinimalStyle(source: Bitmap, quote: String, signature: String): Bitmap {
         val out    = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = android.graphics.Canvas(out)
         val w = out.width.toFloat(); val h = out.height.toFloat()
@@ -580,12 +615,12 @@ class DetailViewModel @Inject constructor(
             typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER
             setShadowLayer(4f, 0f, 2f, android.graphics.Color.argb(200, 0, 0, 0))
         }
-        canvas.drawText("— ${AppConfig.APP_NAME} —", w / 2f, y + lineH * 0.3f, watermarkPaint)
+        canvas.drawText(signature, w / 2f, y + lineH * 0.3f, watermarkPaint)
         return out
     }
 
     // ── WARM style: gold/amber text on deep-dark gradient band ────────────────
-    private fun drawWarmStyle(source: Bitmap, quote: String): Bitmap {
+    private fun drawWarmStyle(source: Bitmap, quote: String, signature: String): Bitmap {
         val out    = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = android.graphics.Canvas(out)
         val w = out.width.toFloat(); val h = out.height.toFloat()
@@ -624,12 +659,12 @@ class DetailViewModel @Inject constructor(
         })
         var y = boxTop + vPad + lineH * 0.85f
         for (line in lines) { canvas.drawText(line, w / 2f, y, textPaint); y += lineH }
-        canvas.drawText("— ${AppConfig.APP_NAME} —", w / 2f, boxBottom - vPad * 0.6f, badgePaint)
+        canvas.drawText(signature, w / 2f, boxBottom - vPad * 0.6f, badgePaint)
         return out
     }
 
     // ── NEON style: vibrant violet on semi-transparent dark card ──────────────
-    private fun drawNeonStyle(source: Bitmap, quote: String): Bitmap {
+    private fun drawNeonStyle(source: Bitmap, quote: String, signature: String): Bitmap {
         val out    = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = android.graphics.Canvas(out)
         val w = out.width.toFloat(); val h = out.height.toFloat()
@@ -660,7 +695,7 @@ class DetailViewModel @Inject constructor(
         })
         var y = boxTop + vPad + lineH * 0.85f
         for (line in lines) { canvas.drawText(line, w / 2f, y, textPaint); y += lineH }
-        canvas.drawText("— ${AppConfig.APP_NAME} —", w / 2f, boxBottom - vPad * 0.6f, badgePaint)
+        canvas.drawText(signature, w / 2f, boxBottom - vPad * 0.6f, badgePaint)
         return out
     }
 

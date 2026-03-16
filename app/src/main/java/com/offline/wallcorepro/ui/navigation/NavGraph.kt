@@ -63,7 +63,10 @@ private val bottomNavItems = listOf(
 )
 
 @Composable
-fun WallCoreNavGraph(navController: NavHostController) {
+fun WallCoreNavGraph(
+    navController: NavHostController,
+    navUiStateHolder: NavUiStateHolder = hiltViewModel()
+) {
 
     val onboardingViewModel: OnboardingViewModel = hiltViewModel()
     val isOnboardingDone by onboardingViewModel.isOnboardingDone.collectAsStateWithLifecycle(initialValue = null)
@@ -105,8 +108,10 @@ fun WallCoreNavGraph(navController: NavHostController) {
                 exit    = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(250)) + fadeOut(tween(200))
             ) {
                 Column(modifier = Modifier.padding(top = 2.dp)) {
-                    // Only show banner ad when ads are enabled AND remote config allows it
-                    if (AppConfig.ADS_ENABLED && com.offline.wallcorepro.util.RemoteConfigManager.bannerAdEnabled) {
+                    // Only show banner when ads enabled, remote config allows, AND content loaded
+                    if (AppConfig.ADS_ENABLED && 
+                        com.offline.wallcorepro.util.RemoteConfigManager.bannerAdEnabled &&
+                        navUiStateHolder.homeContentLoaded) {
                         BannerAdView(modifier = Modifier.fillMaxWidth())
                     }
                     WallCoreBottomNavBar(
@@ -145,6 +150,7 @@ fun WallCoreNavGraph(navController: NavHostController) {
             // Home
             composable(Screen.Home.route) {
                 HomeScreen(
+                    navUiStateHolder = navUiStateHolder,
                     onWallpaperClick = { navController.navigate(Screen.Detail.createRoute(it)) },
                     onCategoryClick  = { navController.navigate(Screen.Category.createRoute(it)) },
                     onAiClick = {
@@ -199,6 +205,7 @@ fun WallCoreNavGraph(navController: NavHostController) {
             ) { backStackEntry ->
                 val category = backStackEntry.arguments?.getString("categoryName") ?: ""
                 HomeScreen(
+                    navUiStateHolder = navUiStateHolder,
                     initialCategory  = category,
                     onWallpaperClick = { navController.navigate(Screen.Detail.createRoute(it)) },
                     onCategoryClick  = { navController.navigate(Screen.Category.createRoute(it)) },

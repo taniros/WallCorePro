@@ -12,7 +12,11 @@ import com.offline.wallcorepro.domain.model.WallpaperCategory
 
 fun WallpaperDto.toEntity(niche: String): WallpaperEntity {
     val resolvedImageUrl = src?.large ?: src?.original ?: imageUrl
-    val resolvedThumb = src?.medium ?: src?.small ?: thumbnailUrl.ifEmpty { resolvedImageUrl }
+    // tiny = ~280px wide, small = ~600px — both fit a 320dp card perfectly.
+    // medium = 1200px was 4–14× larger than needed, causing slow thumbnail loads.
+    val resolvedThumb = src?.tiny?.takeIf  { it.isNotBlank() }
+        ?: src?.small?.takeIf { it.isNotBlank() }
+        ?: thumbnailUrl.ifEmpty { resolvedImageUrl }
     val resolvedColor = avgColor ?: dominantColor
 
     return WallpaperEntity(
@@ -28,7 +32,10 @@ fun WallpaperDto.toEntity(niche: String): WallpaperEntity {
         createdAt = createdAt,
         downloadsCount = downloadsCount,
         photographer = photographer,
-        photographerUrl = photographerUrl
+        photographerUrl = photographerUrl,
+        // alt contains the full Pixabay tags string (e.g. "flowers, sunrise, nature")
+        // sent by the backend so the app can filter people content on ALL tags
+        tags = alt.lowercase()
     )
 }
 
@@ -75,7 +82,8 @@ fun WallpaperEntity.toDomain(): Wallpaper = Wallpaper(
     isFavorite = isFavorite,
     photographer = photographer,
     photographerUrl = photographerUrl,
-    localPath = localPath
+    localPath = localPath,
+    tags = tags
 )
 
 fun CategoryEntity.toDomain(): WallpaperCategory = WallpaperCategory(
@@ -103,5 +111,6 @@ fun Wallpaper.toEntity(): WallpaperEntity = WallpaperEntity(
     isFavorite = isFavorite,
     photographer = photographer,
     photographerUrl = photographerUrl,
-    localPath = localPath
+    localPath = localPath,
+    tags = tags
 )

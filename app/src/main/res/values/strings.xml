@@ -50,6 +50,19 @@
     <string name="notif_night_title">🌙 Good Night!</string>
     <string name="notif_night_body">Set a peaceful wallpaper for a restful night 🌙</string>
 
+    <!-- Home Screen Widget -->
+    <string name="widget_name">WishMagic Wallpaper</string>
+    <string name="widget_description">Shows a beautiful wallpaper with a wish greeting on your home screen</string>
+
+    <!-- App Shortcuts (launcher long-press) -->
+    <string name="shortcut_browse_short">Browse</string>
+    <string name="shortcut_browse_long">Browse Wallpapers</string>
+    <string name="shortcut_favorites_short">Saved</string>
+    <string name="shortcut_favorites_long">My Saved Wallpapers</string>
+    <string name="shortcut_ai_short">AI Wish</string>
+    <string name="shortcut_ai_long">Generate AI Wish</string>
+    <string name="shortcut_disabled">This shortcut is not available</string>
+
     <!-- General -->
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>

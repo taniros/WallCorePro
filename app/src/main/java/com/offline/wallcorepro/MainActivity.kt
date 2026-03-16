@@ -1,10 +1,14 @@
 package com.offline.wallcorepro
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,6 +32,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        registerDynamicShortcuts()
 
         // ── UMP Consent (GDPR/CCPA) ───────────────────────────────────────────
         // Request consent ONCE per launch. The form only appears when required
@@ -62,8 +67,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Route deep-links that arrive while the app is already running
+        // (e.g. user taps a shortcut while app is in back-stack).
+        routeDeepLink(intent)
+    }
+
     override fun onResume() {
         super.onResume()
+        // Route deep-link that launched THIS activity instance (cold start from shortcut).
+        routeDeepLink(intent)
         // ── OneSignal Deep-Link Routing ───────────────────────────────────────
         // If the user tapped a OneSignal notification with a "screen" payload,
         // navigate them to the correct destination.
@@ -79,6 +93,73 @@ class MainActivity : ComponentActivity() {
                 "favorites"-> if (::navController.isInitialized) navController.navigate("favorites")
                 else       -> Timber.d("Unknown deep-link screen: ${link.screen}")
             }
+        }
+    }
+
+    // ── Deep-link routing ─────────────────────────────────────────────────────
+    // Handles wallcorepro:// URIs coming from:
+    //   • Static / dynamic app shortcuts (launcher long-press)
+    //   • Rich notification action buttons
+    //   • Future: shared wallpaper links
+    private fun routeDeepLink(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (data.scheme != "wallcorepro") return
+        if (!::navController.isInitialized) return
+        // Consume so the same intent doesn't re-route on every onResume
+        this.intent = Intent(this, MainActivity::class.java)
+        when (data.host) {
+            "home"      -> navController.navigate("home") {
+                popUpTo("home") { inclusive = false }
+                launchSingleTop = true
+            }
+            "favorites" -> navController.navigate("favorites") {
+                launchSingleTop = true
+            }
+            "ai"        -> navController.navigate("ai") {
+                launchSingleTop = true
+            }
+            "detail"    -> {
+                val id = data.pathSegments.firstOrNull() ?: return
+                navController.navigate("detail/$id") { launchSingleTop = true }
+            }
+        }
+    }
+
+    // ── Dynamic shortcuts ────────────────────────────────────────────────────
+    // Programmatic shortcuts complement the static shortcuts.xml.
+    // They can be updated at runtime (e.g. badge counts, recent wallpaper).
+    private fun registerDynamicShortcuts() {
+        if (!ShortcutManagerCompat.isRequestPinShortcutSupported(this) &&
+            ShortcutManagerCompat.getMaxShortcutCountPerActivity(this) == 0) return
+
+        val browse = ShortcutInfoCompat.Builder(this, "browse_wallpapers")
+            .setShortLabel(getString(R.string.shortcut_browse_short))
+            .setLongLabel(getString(R.string.shortcut_browse_long))
+            .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+            .setIntent(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("wallcorepro://home"), this, MainActivity::class.java))
+            .setRank(0)
+            .build()
+
+        val favorites = ShortcutInfoCompat.Builder(this, "open_favorites")
+            .setShortLabel(getString(R.string.shortcut_favorites_short))
+            .setLongLabel(getString(R.string.shortcut_favorites_long))
+            .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+            .setIntent(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("wallcorepro://favorites"), this, MainActivity::class.java))
+            .setRank(1)
+            .build()
+
+        val ai = ShortcutInfoCompat.Builder(this, "open_ai")
+            .setShortLabel(getString(R.string.shortcut_ai_short))
+            .setLongLabel(getString(R.string.shortcut_ai_long))
+            .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+            .setIntent(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("wallcorepro://ai"), this, MainActivity::class.java))
+            .setRank(2)
+            .build()
+
+        try {
+            ShortcutManagerCompat.setDynamicShortcuts(this, listOf(browse, favorites, ai))
+        } catch (e: Exception) {
+            Timber.w(e, "Dynamic shortcuts registration failed (non-critical)")
         }
     }
 }

@@ -1,8 +1,19 @@
 package com.offline.wallcorepro.domain.model
 
+import androidx.compose.runtime.Immutable
+
 /**
- * Domain model – pure Kotlin, no Android/Room imports
+ * Domain model – pure Kotlin, no Android/Room imports.
+ *
+ * @Immutable tells the Compose compiler that every property of this object is
+ * deeply immutable and will never change after construction.  Without this,
+ * Compose treats Wallpaper as "unstable" and recomposes every WallpaperCard
+ * whenever ANY state in the parent screen changes — even unrelated state like
+ * the search bar or greeting text.  With @Immutable, cards whose wallpaper data
+ * did not change are skipped entirely during recomposition → dramatically fewer
+ * GPU draw calls during fast scrolling.
  */
+@Immutable
 data class Wallpaper(
     val id: String,
     val title: String,
@@ -18,9 +29,14 @@ data class Wallpaper(
     val isFavorite: Boolean = false,
     val photographer: String? = null,
     val photographerUrl: String? = null,
-    val localPath: String? = null
+    val localPath: String? = null,
+    // Full comma-separated source tags (e.g. "flowers, sunrise, nature").
+    // Carried through from WallpaperEntity so all filter checkpoints have
+    // the complete tag string, not just the title.
+    val tags: String = ""
 )
 
+@Immutable
 data class WallpaperCategory(
     val id: String,
     val name: String,

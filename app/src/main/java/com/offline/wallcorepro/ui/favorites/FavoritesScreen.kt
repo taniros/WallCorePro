@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,12 @@ fun FavoritesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val cfg = LocalConfiguration.current
+    val gridColumns = when {
+        cfg.screenWidthDp >= 840 -> 4
+        cfg.screenWidthDp >= 600 -> 3
+        else                     -> 2
+    }
 
     // Biometric lock gate
     if (com.offline.wallcorepro.config.AppConfig.FEATURE_BIOMETRIC_FAVORITES &&
@@ -125,7 +132,7 @@ fun FavoritesScreen(
 
                         // Grid
                         LazyVerticalGrid(
-                            columns               = GridCells.Fixed(2),
+                            columns               = GridCells.Fixed(gridColumns),
                             contentPadding        = PaddingValues(8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement   = Arrangement.spacedBy(8.dp),

@@ -44,103 +44,125 @@ object AppConfig {
     // ─── Niche Pexels Search Queries ────────────────────────────────
     // Strict nature/flower/sky/landscape only.
     // Negative keywords appended to every query to prevent people images from appearing.
-    private const val PEOPLE_EXCLUSION = "-woman -girl -man -person -people -portrait -face -couple -wedding -selfie -model"
+    private const val PEOPLE_EXCLUSION = "-woman -girl -man -person -people -portrait -face -couple -wedding -selfie -model -cross -church -religion"
 
-    // Best pretty morning wallpapers — aesthetic terms for high-quality results
+    // Best pretty morning wallpapers — diverse mix across all niche themes
     val MORNING_QUERIES = listOf(
-        "sunrise pink golden sky flowers nature beautiful $PEOPLE_EXCLUSION",
-        "morning roses dew garden sunlight bokeh stunning $PEOPLE_EXCLUSION",
-        "cherry blossom sunrise golden hour nature aesthetic $PEOPLE_EXCLUSION",
-        "sunflower field bright morning sky nature pretty $PEOPLE_EXCLUSION",
-        "misty morning forest sunbeam golden light dreamy $PEOPLE_EXCLUSION",
-        "rose garden morning soft pink bokeh nature lovely $PEOPLE_EXCLUSION",
-        "sunrise sky orange golden clouds nature gorgeous $PEOPLE_EXCLUSION",
-        "spring flowers garden morning sunlight colorful vivid $PEOPLE_EXCLUSION",
-        "lavender field sunrise purple golden nature peaceful $PEOPLE_EXCLUSION",
-        "morning dewdrops roses warm light flowers romantic $PEOPLE_EXCLUSION",
-        "dawn golden hour mountains clouds beautiful landscape $PEOPLE_EXCLUSION",
-        "morning light through trees forest magical nature $PEOPLE_EXCLUSION",
-        "sunrise over water reflection lake peaceful beautiful $PEOPLE_EXCLUSION",
-        "morning mist valley mountains ethereal nature $PEOPLE_EXCLUSION",
-        "flower petals morning sunlight macro beautiful bokeh $PEOPLE_EXCLUSION"
+        // Sky & atmosphere
+        "sunrise pink golden sky clouds dramatic beautiful landscape $PEOPLE_EXCLUSION",
+        "rainbow after rain sky colorful morning nature stunning $PEOPLE_EXCLUSION",
+        "hot air balloon sunrise sky colorful dreamy landscape $PEOPLE_EXCLUSION",
+        "golden hour dramatic sky clouds orange pink sunrise beautiful $PEOPLE_EXCLUSION",
+        // Mountains & landscapes
+        "snow mountain peak sunrise golden light landscape dramatic $PEOPLE_EXCLUSION",
+        "misty mountain valley morning fog ethereal landscape beautiful $PEOPLE_EXCLUSION",
+        "autumn forest mountain lake reflection golden morning $PEOPLE_EXCLUSION",
+        "grand canyon sunrise orange rock landscape dramatic beautiful $PEOPLE_EXCLUSION",
+        // Water & beaches
+        "tropical beach turquoise water morning golden light paradise $PEOPLE_EXCLUSION",
+        "waterfall morning mist sunbeam tropical forest beautiful $PEOPLE_EXCLUSION",
+        "lake reflection mountains morning calm peaceful beautiful 4k $PEOPLE_EXCLUSION",
+        "ocean waves sunrise morning golden light peaceful beach $PEOPLE_EXCLUSION",
+        // Forest & trees
+        "cherry blossom sunrise golden hour pink trees nature aesthetic $PEOPLE_EXCLUSION",
+        "autumn maple trees golden orange red leaves morning light $PEOPLE_EXCLUSION",
+        "bamboo forest green morning light peaceful nature beautiful $PEOPLE_EXCLUSION",
+        // Wildlife & colorful nature
+        "peacock feathers iridescent colorful beautiful macro nature $PEOPLE_EXCLUSION",
+        "butterfly flower macro colorful bokeh morning garden nature $PEOPLE_EXCLUSION",
+        // Flowers (selective)
+        "lavender field sunrise purple golden light nature peaceful $PEOPLE_EXCLUSION",
+        "tulip field spring colorful flowers sunrise nature beautiful $PEOPLE_EXCLUSION",
+        "sunflower field golden morning sunrise blue sky nature beautiful $PEOPLE_EXCLUSION"
     )
-    // Best pretty night wallpapers — aesthetic terms for high-quality results
+    // Best pretty night wallpapers — diverse mix across all niche themes
     val NIGHT_QUERIES = listOf(
-        "full moon night sky stars beautiful nature magical $PEOPLE_EXCLUSION",
-        "roses candlelight night flowers bokeh dark romantic $PEOPLE_EXCLUSION",
-        "milky way stars purple blue night sky nature stunning $PEOPLE_EXCLUSION",
-        "moonlit ocean calm water reflection nature serene $PEOPLE_EXCLUSION",
-        "night sky stars long exposure galaxy beautiful $PEOPLE_EXCLUSION",
-        "red roses dark bokeh flowers night aesthetic $PEOPLE_EXCLUSION",
-        "crescent moon clouds night dreamy nature lovely $PEOPLE_EXCLUSION",
-        "night garden flowers moon glowing nature peaceful $PEOPLE_EXCLUSION",
-        "starry night sky beautiful long exposure cosmic $PEOPLE_EXCLUSION",
-        "purple galaxy stars cosmos beautiful nature gorgeous $PEOPLE_EXCLUSION",
-        "northern lights aurora borealis night sky colorful $PEOPLE_EXCLUSION",
+        // Sky & space
+        "milky way stars purple blue night sky mountains stunning $PEOPLE_EXCLUSION",
+        "northern lights aurora borealis night sky green mountains $PEOPLE_EXCLUSION",
+        "nebula colorful space cosmic galaxy stars beautiful 4k $PEOPLE_EXCLUSION",
+        "astrophotography stars milky way desert landscape night 8k $PEOPLE_EXCLUSION",
+        "meteor shower night sky stars long exposure beautiful $PEOPLE_EXCLUSION",
+        "full moon night sky clouds dramatic beautiful nature $PEOPLE_EXCLUSION",
+        // Water at night
+        "bioluminescent ocean waves glowing blue night beach beautiful $PEOPLE_EXCLUSION",
+        "moonlit lake reflection calm water night peaceful beautiful $PEOPLE_EXCLUSION",
+        "waterfall night long exposure moonlight nature beautiful $PEOPLE_EXCLUSION",
+        // Landscapes at night
+        "snow mountain night stars landscape dramatic beautiful cold $PEOPLE_EXCLUSION",
+        "fireflies night forest magical glowing trees nature dreamy $PEOPLE_EXCLUSION",
+        "autumn night moon silhouette tree orange leaves beautiful $PEOPLE_EXCLUSION",
+        // Dramatic nature
+        "lightning storm night sky dramatic clouds nature powerful $PEOPLE_EXCLUSION",
+        "crystal cave glowing blue stalactites underground beautiful $PEOPLE_EXCLUSION",
+        "deep ocean underwater glowing bioluminescent blue beautiful $PEOPLE_EXCLUSION",
+        // City & abstract
         "city lights night skyline reflection water beautiful $PEOPLE_EXCLUSION",
-        "moon over mountains silhouette night dramatic $PEOPLE_EXCLUSION",
-        "fireflies night forest magical glowing nature $PEOPLE_EXCLUSION",
-        "night flowers moonlight petals soft bokeh romantic $PEOPLE_EXCLUSION"
+        "abstract dark colorful bokeh night purple blue beautiful $PEOPLE_EXCLUSION",
+        // Night flowers (selective)
+        "roses candlelight bokeh dark night flowers warm romantic $PEOPLE_EXCLUSION",
+        "crescent moon night sky clouds stars peaceful nature lovely $PEOPLE_EXCLUSION",
+        "purple galaxy stars cosmos beautiful night nature gorgeous $PEOPLE_EXCLUSION"
     )
 
-    // Morning greeting photos for Pixabay – best pretty nature/flower themed
+    // Morning greeting photos for Pixabay – diverse nature/landscape/sky themed
     val MORNING_ILLUSTRATION_QUERIES = listOf(
+        "good morning sunrise mountains golden landscape beautiful",
         "good morning flowers roses nature beautiful",
-        "good morning sunrise stunning flowers",
-        "good morning sunshine roses garden pretty",
-        "good morning wishes flowers bokeh aesthetic",
-        "good morning blessings flowers sunlight lovely",
-        "beautiful morning flowers nature sunrise gorgeous",
-        "good morning butterflies flowers garden dreamy",
-        "good morning garden flowers sunrise nature peaceful",
-        "morning glory flowers dewdrops sunlight romantic",
-        "good morning roses pink garden nature vibrant",
-        "lovely morning flowers golden light nature",
-        "good morning daisy sunflower field beautiful"
+        "good morning waterfall mist forest sunbeam stunning",
+        "good morning sunshine beach tropical paradise pretty",
+        "good morning rainbow sky colorful nature peaceful",
+        "beautiful morning cherry blossom sunrise pink nature",
+        "good morning autumn leaves golden forest morning light",
+        "good morning lake reflection mountains calm peaceful",
+        "good morning butterfly flowers garden macro colorful",
+        "good morning lavender field sunrise purple golden",
+        "lovely morning sky clouds golden hour landscape nature",
+        "good morning peacock feathers colorful beautiful nature"
     )
 
-    // Afternoon greeting photos – sunny, vibrant, productive
+    // Afternoon greeting photos – sunny, vibrant, diverse landscapes
     val AFTERNOON_ILLUSTRATION_QUERIES = listOf(
-        "good afternoon sunshine flowers nature beautiful",
-        "afternoon sun golden light garden flowers",
-        "good afternoon wishes flowers vibrant nature",
-        "sunny afternoon flowers garden peaceful",
-        "beautiful afternoon sky clouds nature",
-        "good afternoon blessings flowers sunlight",
-        "afternoon light golden hour nature flowers",
-        "good afternoon roses garden warm light",
-        "peaceful afternoon nature landscape beautiful",
-        "good afternoon sunshine garden flowers lovely"
+        "good afternoon sunshine meadow flowers nature beautiful",
+        "good afternoon sky clouds dramatic landscape beautiful",
+        "good afternoon tropical beach turquoise water paradise",
+        "good afternoon golden hour valley landscape sunlight",
+        "beautiful afternoon waterfall rainbow mist nature",
+        "good afternoon mountain view green valley peaceful",
+        "good afternoon sunflower field blue sky bright nature",
+        "good afternoon butterfly garden colorful nature vibrant",
+        "peaceful afternoon lake nature landscape reflections",
+        "good afternoon autumn park golden leaves sunlight"
     )
 
-    // Evening greeting photos – sunset, golden hour, twilight
+    // Evening greeting photos – sunset, golden hour, twilight diverse
     val EVENING_ILLUSTRATION_QUERIES = listOf(
-        "good evening sunset sky beautiful nature",
-        "evening golden hour flowers nature",
-        "good evening wishes sunset roses",
-        "beautiful evening sky clouds nature",
-        "good evening blessings flowers twilight",
-        "sunset evening flowers garden peaceful",
-        "good evening roses sunset warm light",
-        "twilight evening nature beautiful sky",
-        "good evening sky golden hour nature",
-        "peaceful evening sunset flowers nature"
+        "good evening sunset sky dramatic orange clouds beautiful",
+        "good evening golden hour mountain silhouette sunset",
+        "good evening ocean sunset waves beautiful nature",
+        "beautiful evening sky stars twilight landscape nature",
+        "good evening autumn sunset golden trees peaceful",
+        "sunset evening desert dunes golden light dramatic",
+        "good evening sky reflection lake golden hour nature",
+        "twilight evening city lights bokeh beautiful sky",
+        "good evening flowers sunset garden warm bokeh",
+        "peaceful evening lavender sunset purple sky nature"
     )
 
-    // Night greeting photos for Pixabay – best pretty moon/stars/flowers
+    // Night greeting photos for Pixabay – stars/moon/nature diverse
     val NIGHT_ILLUSTRATION_QUERIES = listOf(
-        "good night moon stars nature beautiful",
-        "good night flowers stunning roses",
-        "sweet dreams moon flowers stars pretty",
-        "good night wishes roses moonlight aesthetic",
-        "good night stars sky flowers gorgeous",
-        "good night sleep well flowers moon dreamy",
-        "beautiful goodnight stars sky nature peaceful",
-        "good night blessings moon flowers romantic",
-        "sweet dreams night flowers roses lovely",
-        "good night candle flowers bokeh magical",
-        "lovely good night moonlit sky nature",
-        "good night galaxy stars cosmos beautiful"
+        "good night moon stars mountains nature beautiful",
+        "good night northern lights aurora sky colorful",
+        "sweet dreams milky way stars galaxy night sky",
+        "good night ocean moonlit waves peaceful beautiful",
+        "good night winter snow night stars peaceful nature",
+        "good night fireflies forest magical glowing dreamy",
+        "beautiful goodnight stars sky landscape nature peaceful",
+        "good night moon clouds night sky nature lovely",
+        "sweet dreams night flowers candle bokeh romantic",
+        "good night galaxy nebula cosmos beautiful stunning",
+        "lovely good night moonlit lake reflection nature",
+        "good night aurora borealis night sky green beautiful"
     )
 
     // Combined fallback list (all greeting illustrations)
@@ -221,16 +243,16 @@ object AppConfig {
         "Afternoon Wishes"    to "sunny afternoon flowers garden nature bright",
         "Evening Greetings"   to "sunset golden hour sky clouds nature beautiful",
         "Night Wishes"        to "beautiful moon night stars sky clouds nature",
-        "Morning Love"        to "red roses morning dew garden flowers soft bokeh",
-        "Afternoon Love"      to "red roses sunlight garden flowers warm bokeh",
-        "Evening Love"        to "red roses sunset golden hour flowers romantic",
-        "Nightly Love"        to "red roses candle night moon flowers bokeh dark",
-        "Family Wishes"       to "sunflowers morning sunshine garden warm nature",
-        "Friends Greetings"   to "colorful flowers morning garden butterflies nature",
-        "Daily Blessings"     to "golden sunrise nature peaceful mountain light rays",
-        "Spiritual Morning"   to "sunrise golden light rays nature peaceful sky",
-        "Sweet Night Dreams"  to "dreamy moonlit clouds night stars soft nature",
-        "Romantic Greetings"  to "red roses pink flowers morning dew garden bokeh"
+        "Morning Love"        to "red roses heart bokeh morning dew garden flowers soft romantic",
+        "Afternoon Love"      to "red roses heart sunlight garden flowers warm bokeh romantic",
+        "Evening Love"        to "red roses heart sunset golden hour flowers romantic bokeh",
+        "Nightly Love"        to "red roses heart candle night moon flowers bokeh dark romantic",
+        "Family Wishes"       to "sunflowers morning sunshine garden warm nature colorful",
+        "Friends Greetings"   to "colorful flowers morning garden butterflies tropical nature",
+        "Daily Blessings"     to "golden sunrise nature peaceful mountain light rays beautiful",
+        "Spiritual Morning"   to "sunrise golden light rays nature peaceful sky beautiful",
+        "Sweet Night Dreams"  to "dreamy moonlit clouds night stars soft nature beautiful",
+        "Romantic Greetings"  to "red roses heart shaped bokeh pink flowers romantic beautiful nature"
     )
 
     // ─── Backend Configuration ──────────────────────────────────────
@@ -238,7 +260,7 @@ object AppConfig {
     // Example: "https://wallcorepro-api.onrender.com/v1/"
     const val BASE_URL             = "https://wallcorepro-api.onrender.com/v1/"
     const val API_KEY              = "YOUR_API_KEY_HERE"
-    const val API_TIMEOUT_SECONDS  = 30L
+    const val API_TIMEOUT_SECONDS  = 60L   // Render free-tier needs up to 60 s to wake from sleep
     const val MAX_RETRIES          = 3
 
     // ─── Backend-Only Strategy (License-Safe) ──────────────────────────────
@@ -250,13 +272,54 @@ object AppConfig {
     // Gemini key stays on server (Render env). App calls /v1/ai/* only.
 
     // ─── Cache & Sync ────────────────────────────────────────────────
-    const val INITIAL_WALLPAPER_COUNT    = 80
-    const val PAGE_SIZE                  = 40
-    const val PREFETCH_DISTANCE          = 10
-    const val CACHE_DISK_SIZE_MB         = 500L
-    const val CACHE_MEMORY_SIZE_MB       = 100L
+    // 300 items pre-loaded for category/trending feeds on first sync.
+    const val INITIAL_WALLPAPER_COUNT    = 300
+    // 50 items per API fetch: larger batches mean fewer round-trips and
+    // smoother scrolling. initialLoadSize = PAGE_SIZE * 4 = 200 items on first open.
+    const val PAGE_SIZE                  = 50
+    // Start prefetching the next page when 20 items remain (~10 rows ahead).
+    // This gives ample lead time for network + DB insert before user reaches the end.
+    const val PREFETCH_DISTANCE          = 20
+    // ── Query rotation & infinite content ───────────────────────────────────
+    // The backend has 40 unique query combinations (20 morning + 20 night queries).
+    // The mediator rotates through ALL 40 on consecutive pages so every scroll page
+    // comes from a DIFFERENT query — maximising image variety within one session.
+    //   virtualFetchIndex 0  → query 0, Pixabay page 1
+    //   virtualFetchIndex 1  → query 1, Pixabay page 1
+    //   ...
+    //   virtualFetchIndex 39 → query 39, Pixabay page 1
+    //   virtualFetchIndex 40 → query 0,  Pixabay page 2  (new images from same query)
+    // Total capacity per session: 40 queries × ~20 Pixabay pages × 50 items ≈ 40,000
+    const val NUM_BACKEND_QUERIES        = 40
+
+    // Persistent global seed — advances by this amount each session so the backend
+    // always starts on a different query rotation.  After 10,000 / 60 ≈ 166 sessions
+    // the seed wraps around; by then the library has 166 × 3,000 unique images.
+    const val SEED_ADVANCE_PER_SESSION   = 60
+
+    // Parallel background warm-up requests fired on every app open.
+    // Each uses a seed spread ~833 apart → covers 12 distinct query clusters.
+    // WARMUP_PAGES_PER_SEED pages are fetched per seed slot (12 × 2 × 50 = 1,200 items).
+    const val WARMUP_PARALLEL_SEEDS      = 12
+    const val WARMUP_PAGES_PER_SEED      = 2
+    // First N seeds fire SEQUENTIALLY to confirm the Render server is awake before
+    // the remaining (WARMUP_PARALLEL_SEEDS - WARMUP_WAKE_SEEDS) fire in parallel.
+    const val WARMUP_WAKE_SEEDS          = 2
+
+    // Soft cap on cached non-favourite items: delete those older than this many days.
+    const val CACHE_MAX_AGE_DAYS         = 7L
+
+    // When true, non-favourite wallpapers are cleared from the DB when the app
+    // goes to background, so every fresh open shows genuinely new content.
+    const val CACHE_CLEAR_ON_EXIT        = true
+
+    // Legacy / cycling safety — kept for the UI wrap-around handler
+    const val SEED_MODULO                = 50
+    const val MAX_SEED_CYCLES            = 15
+    const val CACHE_DISK_SIZE_MB         = 512L
+    const val CACHE_MEMORY_SIZE_MB       = 128L
     const val SYNC_INTERVAL_HOURS        = 3L
-    const val FRESHNESS_THRESHOLD_HOURS  = 6L  // Was 1: reduced refresh frequency to stabilize list
+    const val FRESHNESS_THRESHOLD_HOURS  = 0L   // Always refresh on every app open
 
     // ─── Feature Flags ───────────────────────────────────────────────
     const val FEATURE_FAVORITES         = true
@@ -308,8 +371,10 @@ object AppConfig {
     const val ADMOB_INTERSTITIAL_ID    = "ca-app-pub-3940256099942544/1033173712"
     const val ADMOB_REWARDED_ID        = "ca-app-pub-3940256099942544/5224354917"
     const val ADMOB_APP_OPEN_ID        = "ca-app-pub-3940256099942544/9257395921"
+    const val ADMOB_INLINE_BANNER_ID   = "ca-app-pub-3940256099942544/6300978111" // Replace with real inline banner unit ID before publishing
 
     const val NATIVE_AD_INTERVAL        = 7    // 1 native ad every 7 wallpaper cards
+    const val INLINE_BANNER_INTERVAL    = 15   // 1 inline adaptive banner every 15 cards (offset from native)
     const val INTERSTITIAL_APPLY_COUNT  = 3    // interstitial every 3rd action
     const val INTERSTITIAL_SCROLL_ITEMS = 25   // show interstitial every N wallpapers scrolled
     const val INTERSTITIAL_AI_GENERATE   = 2    // show interstitial after Nth AI wish generation
@@ -337,6 +402,7 @@ object AppConfig {
     const val RC_REWARDED_ENABLED     = true
     const val RC_NATIVE_AD_ENABLED    = true
     const val RC_BANNER_AD_ENABLED    = true
+    const val RC_INLINE_BANNER_ENABLED  = true
     const val RC_APP_OPEN_AD_ENABLED  = true
     const val RC_SHOW_NEW_BADGE       = true
     const val RC_FORCE_FRESH_ON_OPEN  = false  // Was true: cleared cache on every refresh, caused list to keep changing

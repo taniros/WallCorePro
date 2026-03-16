@@ -15,7 +15,7 @@ import com.offline.wallcorepro.data.local.entity.WallpaperRemoteKeys
         CategoryEntity::class,
         WallpaperRemoteKeys::class
     ],
-    version = 1,
+    version = 4,
     exportSchema = true
 )
 abstract class WallCoreDatabase : RoomDatabase() {

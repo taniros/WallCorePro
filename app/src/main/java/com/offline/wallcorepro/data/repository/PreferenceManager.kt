@@ -51,6 +51,12 @@ class PreferenceManager @Inject constructor(
         val FAVORITES_LOCKED           = booleanPreferencesKey("favorites_locked")
         val APP_OPEN_HOURS             = stringPreferencesKey("app_open_hours") // comma-sep ints
         val SMART_REMINDER_DISMISSED   = booleanPreferencesKey("smart_reminder_dismissed")
+        val DETAIL_FULLSCREEN_BY_DEFAULT = booleanPreferencesKey("detail_fullscreen_by_default")
+        // Monotonically increasing counter advanced by SEED_ADVANCE_PER_SESSION each session.
+        // Ensures every session starts on a different backend query rotation → no repeats.
+        val GLOBAL_FEED_SEED             = intPreferencesKey("global_feed_seed")
+        // Set to true when the app goes to background; cleared after cache wipe on next open.
+        val PENDING_CACHE_CLEAR          = booleanPreferencesKey("pending_cache_clear")
         fun lastSyncKey(niche: String)         = longPreferencesKey("last_sync_$niche")
         fun categoryInteraction(category: String) = intPreferencesKey("interaction_$category")
     }
@@ -239,12 +245,44 @@ class PreferenceManager @Inject constructor(
     }
     suspend fun dismissSmartReminder() { dataStore.edit { it[Keys.SMART_REMINDER_DISMISSED] = true } }
 
+    // ─── Detail Full Screen ───────────────────────────────────────────────────
+    val detailFullScreenByDefault: Flow<Boolean> =
+        dataStore.data.map { it[Keys.DETAIL_FULLSCREEN_BY_DEFAULT] ?: false }
+    suspend fun setDetailFullScreenByDefault(enabled: Boolean) {
+        dataStore.edit { it[Keys.DETAIL_FULLSCREEN_BY_DEFAULT] = enabled }
+    }
+
     // ─── Premium ──────────────────────────────────────────────────────────────
     val isPremiumUnlocked: Flow<Boolean> =
         dataStore.data.map { it[Keys.PREMIUM_UNLOCKED] ?: false }
 
     suspend fun setPremiumUnlocked(unlocked: Boolean) {
         dataStore.edit { it[Keys.PREMIUM_UNLOCKED] = unlocked }
+    }
+
+    // ─── Global Feed Seed (persistent, ever-advancing) ────────────────────────
+    // Returns the current seed and atomically advances it for the next session.
+    // Session 1 → seed 0, session 2 → seed 60, session 3 → seed 120 …
+    // After ~166 sessions the counter wraps (mod 10,000) — acceptable repetition.
+    suspend fun getAndAdvanceGlobalFeedSeed(): Int {
+        var current = 0
+        dataStore.edit { prefs ->
+            current = prefs[Keys.GLOBAL_FEED_SEED] ?: 0
+            prefs[Keys.GLOBAL_FEED_SEED] =
+                (current + AppConfig.SEED_ADVANCE_PER_SESSION) % 10_000
+        }
+        return current
+    }
+
+    // ─── Pending Cache Clear ──────────────────────────────────────────────────
+    // Set to true when the app goes to background (via AppResumeNotifier).
+    // HomeViewModel reads this on the next open and wipes non-favourite wallpapers
+    // from the DB before starting the warm-up, ensuring every session is fresh.
+    suspend fun getPendingCacheClear(): Boolean =
+        dataStore.data.first()[Keys.PENDING_CACHE_CLEAR] ?: false
+
+    suspend fun setPendingCacheClear(value: Boolean) {
+        dataStore.edit { it[Keys.PENDING_CACHE_CLEAR] = value }
     }
 }
 

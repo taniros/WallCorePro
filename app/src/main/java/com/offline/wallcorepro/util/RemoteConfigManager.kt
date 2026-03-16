@@ -35,6 +35,7 @@ object RemoteConfigManager {
     private const val KEY_PREMIUM_ENABLED = "premium_enabled"
     private const val KEY_NATIVE_AD_INTERVAL = "native_ad_interval"
     private const val KEY_INTERSTITIAL_COUNT = "interstitial_count"
+    private const val KEY_INLINE_BANNER_ENABLED = "inline_banner_enabled"
     private const val KEY_QUOTES_OF_DAY = "quotes_of_day"
 
     @Serializable
@@ -59,6 +60,7 @@ object RemoteConfigManager {
             KEY_PREMIUM_ENABLED to AppConfig.RC_PREMIUM_ENABLED,
             KEY_NATIVE_AD_INTERVAL to AppConfig.NATIVE_AD_INTERVAL.toLong(),
             KEY_INTERSTITIAL_COUNT to AppConfig.INTERSTITIAL_APPLY_COUNT.toLong(),
+            KEY_INLINE_BANNER_ENABLED to AppConfig.RC_INLINE_BANNER_ENABLED,
             KEY_QUOTES_OF_DAY to "[]"
         )
         remoteConfig.setDefaultsAsync(defaults)
@@ -88,6 +90,7 @@ object RemoteConfigManager {
     val premiumEnabled: Boolean get() = remoteConfig.getBoolean(KEY_PREMIUM_ENABLED)
     val nativeAdInterval: Int get() = remoteConfig.getLong(KEY_NATIVE_AD_INTERVAL).toInt()
     val interstitialCount: Int get() = remoteConfig.getLong(KEY_INTERSTITIAL_COUNT).toInt()
+    val inlineBannerEnabled: Boolean get() = remoteConfig.getBoolean(KEY_INLINE_BANNER_ENABLED)
 
     /**
      * Remote quotes for "Quote of the Day". Update in Firebase Console without app release.

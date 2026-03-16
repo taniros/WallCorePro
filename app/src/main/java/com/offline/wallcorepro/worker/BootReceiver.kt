@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.offline.wallcorepro.config.AppConfig
+import com.offline.wallcorepro.widget.WallpaperWidget
 import timber.log.Timber
 
 /**
@@ -19,7 +20,8 @@ class BootReceiver : BroadcastReceiver() {
 
         if (!AppConfig.FEATURE_DAILY_NOTIFICATION) return
 
-        Timber.d("BootReceiver: device rebooted — rescheduling daily notifications")
+        Timber.d("BootReceiver: device rebooted — rescheduling daily notifications & refreshing widget")
         NotificationWorker.schedule(context)
+        WallpaperWidget.updateAll(context)
     }
 }

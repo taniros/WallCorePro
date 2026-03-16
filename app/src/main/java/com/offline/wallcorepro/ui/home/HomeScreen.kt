@@ -74,6 +74,7 @@ fun HomeScreen(
     onWallpaperClick: (String) -> Unit,
     onCategoryClick: (String) -> Unit,
     onAiClick: () -> Unit,
+    navUiStateHolder: com.offline.wallcorepro.ui.navigation.NavUiStateHolder? = null,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -138,7 +139,12 @@ fun HomeScreen(
         }
     }
 
-    val context = LocalContext.current
+    // Notify NavGraph when content is loaded (controls bottom banner visibility)
+    LaunchedEffect(wallpapers.itemCount) {
+        if (wallpapers.itemCount > 0) {
+            navUiStateHolder?.markHomeContentLoaded()
+        }
+    }
 
     // ── Proactive image prefetch ──────────────────────────────────────────────
     // Every time the paging list grows (new page loaded from DB/network), we

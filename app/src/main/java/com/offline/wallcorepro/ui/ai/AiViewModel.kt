@@ -22,7 +22,9 @@ data class AiUiState(
     val generateCount: Int         = 0,
     val showInterstitialTrigger: Boolean = false,
     // Persistent emotional tone (Soft / Deep / Romantic / Energetic / Funny)
-    val selectedTone: String       = com.offline.wallcorepro.config.AppConfig.EmotionalTone.default.key
+    val selectedTone: String       = com.offline.wallcorepro.config.AppConfig.EmotionalTone.default.key,
+    val userName: String           = "",
+    val showEditDialog: Boolean    = false
 )
 
 @HiltViewModel
@@ -40,6 +42,19 @@ class AiViewModel @Inject constructor(
                 _uiState.update { it.copy(selectedTone = tone) }
             }
         }
+        viewModelScope.launch {
+            preferenceManager.userName.collect { name ->
+                _uiState.update { it.copy(userName = name) }
+            }
+        }
+    }
+
+    fun updateGeneratedWish(text: String) {
+        _uiState.update { it.copy(generatedWish = text, showEditDialog = false) }
+    }
+
+    fun toggleEditDialog() {
+        _uiState.update { it.copy(showEditDialog = !it.showEditDialog) }
     }
 
     fun onMoodSelected(mood: String) {

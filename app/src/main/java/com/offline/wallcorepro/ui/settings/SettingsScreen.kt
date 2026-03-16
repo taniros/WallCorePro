@@ -1,5 +1,7 @@
 package com.offline.wallcorepro.ui.settings
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.*
@@ -31,6 +33,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.offline.wallcorepro.config.AppConfig
 import com.offline.wallcorepro.domain.model.AutoWallpaperInterval
+import com.offline.wallcorepro.widget.WallpaperWidget
 import com.offline.wallcorepro.domain.model.WallpaperTarget
 import com.offline.wallcorepro.ui.theme.MoonPurple
 import com.offline.wallcorepro.ui.theme.SunriseAmber
@@ -97,6 +100,16 @@ fun SettingsScreen(
                             onChecked = { viewModel.setAutoTheme(it) }
                         )
                     }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant)
+                    SettingsToggleRow(
+                        icon      = Icons.Default.Fullscreen,
+                        iconTint  = SunriseOrange,
+                        title     = "Full Screen Wallpaper",
+                        subtitle  = "Tap to hide/show UI · Start in full screen",
+                        checked   = uiState.detailFullScreenByDefault,
+                        onChecked = { viewModel.setDetailFullScreenByDefault(it) }
+                    )
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -270,6 +283,11 @@ fun SettingsScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                 }
+
+                // ── Home Screen Widget ───────────────────────────────
+                WidgetPromoCard()
+
+                Spacer(Modifier.height(12.dp))
 
                 // ── Connect ───────────────────────────────────────────
                 SettingGroupCard(label = "⭐ Connect") {
@@ -601,6 +619,125 @@ private fun AppHeroCard(userName: String) {
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(0.65f)
             )
+        }
+    }
+}
+
+// ─── Home Screen Widget Promo Card ────────────────────────────────────────────
+
+@Composable
+private fun WidgetPromoCard() {
+    val context = LocalContext.current
+
+    Text(
+        text       = "🖼️ Home Screen Widget",
+        style      = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color      = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier   = Modifier.padding(bottom = 6.dp, start = 4.dp)
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape    = RoundedCornerShape(18.dp),
+        colors   = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF1A237E), Color(0xFF283593), Color(0xFF1565C0))
+                    )
+                )
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+
+                // ── Mini widget preview ───────────────────────────────
+                Row(
+                    modifier          = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text       = "Beautiful wallpaper on your home screen",
+                            style      = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = Color.White
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text  = "Get a wish greeting + wallpaper thumbnail right on your launcher — updates automatically with every new wallpaper.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.78f)
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    // Mini widget mockup
+                    Box(
+                        modifier = Modifier
+                            .size(width = 80.dp, height = 52.dp)
+                            .background(Color.White.copy(0.12f), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color.White.copy(0.25f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.BottomStart
+                    ) {
+                        Text("☀️", fontSize = 22.sp, modifier = Modifier.align(Alignment.Center))
+                        Text(
+                            text     = "Good Morning!",
+                            style    = MaterialTheme.typography.labelSmall,
+                            color    = Color.White,
+                            fontSize = 7.sp,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── How-to steps ─────────────────────────────────────
+                listOf(
+                    "1️⃣  Long-press your home screen",
+                    "2️⃣  Tap  Widgets",
+                    "3️⃣  Find  WishMagic Wallpaper  and drag it"
+                ).forEach { step ->
+                    Text(
+                        text     = step,
+                        style    = MaterialTheme.typography.bodySmall,
+                        color    = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Add button (requestPinAppWidget — API 26+) ───────
+                val appWidgetManager = AppWidgetManager.getInstance(context)
+                val widgetProvider   = ComponentName(context, WallpaperWidget::class.java)
+                val canPin           = appWidgetManager.isRequestPinAppWidgetSupported
+
+                Button(
+                    onClick = {
+                        if (canPin) {
+                            appWidgetManager.requestPinAppWidget(widgetProvider, null, null)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = RoundedCornerShape(12.dp),
+                    colors   = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor   = Color(0xFF1A237E)
+                    ),
+                    enabled = canPin
+                ) {
+                    Icon(Icons.Default.Widgets, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text       = if (canPin) "Add Widget to Home Screen" else "Long-press launcher to add widget",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }

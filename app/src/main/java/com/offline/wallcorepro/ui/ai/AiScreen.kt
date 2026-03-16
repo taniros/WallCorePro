@@ -31,6 +31,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
 import android.app.Activity
 import com.offline.wallcorepro.ads.AdsManager
 import com.offline.wallcorepro.config.AppConfig
@@ -186,17 +187,33 @@ fun AiScreen(
 
                 // ─── AI Result Card ──────────────────────────────────────
                 WishResultCard(
-                    wish       = uiState.generatedWish,
-                    isLoading  = uiState.isLoading,
-                    onCopy     = { clipboardManager.setText(AnnotatedString(uiState.generatedWish)) },
-                    onShare    = {
+                    wish          = uiState.generatedWish,
+                    isLoading     = uiState.isLoading,
+                    onCopy       = { clipboardManager.setText(AnnotatedString(uiState.generatedWish)) },
+                    onShare      = {
+                        val shareText = buildString {
+                            append("\"${uiState.generatedWish}\"")
+                            append("\n\n")
+                            append(if (uiState.userName.isNotBlank()) "— ${uiState.userName}" else "— via ${AppConfig.APP_NAME}")
+                            append("\n✨ ${AppConfig.APP_NAME_SHORT} · Download FREE: ${AppConfig.PLAY_STORE_URL}")
+                        }
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "${uiState.generatedWish}\n\n— via ${AppConfig.APP_NAME}")
+                            putExtra(Intent.EXTRA_TEXT, shareText)
                         }
                         context.startActivity(Intent.createChooser(intent, "Share Wish"))
-                    }
+                    },
+                    onEditClick  = { viewModel.toggleEditDialog() }
                 )
+
+                // ─── Edit Wish Dialog ─────────────────────────────────────
+                if (uiState.showEditDialog && uiState.generatedWish.isNotEmpty()) {
+                    AiEditWishDialog(
+                        initialText = uiState.generatedWish,
+                        onApply     = { viewModel.updateGeneratedWish(it) },
+                        onDismiss   = { viewModel.toggleEditDialog() }
+                    )
+                }
 
                 Spacer(Modifier.height(16.dp))
 
@@ -255,9 +272,15 @@ fun AiScreen(
                             wish   = historyWish,
                             onCopy = { clipboardManager.setText(AnnotatedString(historyWish)) },
                             onShare = {
+                                val shareText = buildString {
+                                    append("\"$historyWish\"")
+                                    append("\n\n")
+                                    append(if (uiState.userName.isNotBlank()) "— ${uiState.userName}" else "— via ${AppConfig.APP_NAME}")
+                                    append("\n✨ ${AppConfig.APP_NAME_SHORT} · Download FREE: ${AppConfig.PLAY_STORE_URL}")
+                                }
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, "$historyWish\n\n— via ${AppConfig.APP_NAME}")
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
                                 }
                                 context.startActivity(Intent.createChooser(intent, "Share Wish"))
                             }
@@ -399,6 +422,58 @@ fun MoodChip(
     }
 }
 
+// ─── Edit Wish Dialog ────────────────────────────────────────────────────────
+
+@Composable
+private fun AiEditWishDialog(
+    initialText: String,
+    onApply: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var text by remember(initialText) { mutableStateOf(initialText) }
+    val maxChars = 200
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor   = MaterialTheme.colorScheme.surface,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("✏️", fontSize = 22.sp)
+                Spacer(Modifier.width(8.dp))
+                Text("Edit Your Wish", fontWeight = FontWeight.ExtraBold)
+            }
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value         = text,
+                    onValueChange = { if (it.length <= maxChars) text = it },
+                    modifier      = Modifier.fillMaxWidth(),
+                    minLines      = 3,
+                    maxLines      = 6,
+                    placeholder   = { Text("Your personalized wish…") }
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text  = "${text.length} / $maxChars",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onApply(text.trim()) }, enabled = text.isNotBlank()) {
+                Text("Apply ✓", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
 // ─── Wish Result Card ────────────────────────────────────────────────────────
 
 @Composable
@@ -406,7 +481,8 @@ private fun WishResultCard(
     wish: String,
     isLoading: Boolean,
     onCopy: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onEditClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -460,6 +536,14 @@ private fun WishResultCard(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            OutlinedButton(
+                                onClick = onEditClick,
+                                shape   = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Edit, null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Edit")
+                            }
                             OutlinedButton(
                                 onClick = onCopy,
                                 shape   = RoundedCornerShape(12.dp)

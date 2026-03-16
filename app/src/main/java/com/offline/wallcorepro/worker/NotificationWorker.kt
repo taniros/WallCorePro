@@ -4,6 +4,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
@@ -16,8 +19,11 @@ import com.offline.wallcorepro.data.repository.PreferenceManager
 import com.offline.wallcorepro.domain.usecase.GetRandomWallpaperUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -54,20 +60,41 @@ class NotificationWorker @AssistedInject constructor(
         }
 
         return try {
-            val quote    = WishQuotePool.getNotificationQuote(timeOfDay)
-            val userName = preferenceManager.userName.first()
+            val quote      = WishQuotePool.getNotificationQuote(timeOfDay)
+            val userName   = preferenceManager.userName.first()
             val nameClause = if (userName.isNotBlank()) ", $userName" else ""
-            val greeting = "${timeOfDay.emoji} ${timeOfDay.displayName}$nameClause!"
+            val greeting   = "${timeOfDay.emoji} ${timeOfDay.displayName}$nameClause!"
 
-            val (notifId, _) = when (timeOfDay) {
-                AppConfig.TimeOfDay.MORNING   -> AppConfig.MORNING_NOTIFICATION_ID to "Morning"
-                AppConfig.TimeOfDay.AFTERNOON -> AppConfig.AFTERNOON_NOTIFICATION_ID to "Afternoon"
-                AppConfig.TimeOfDay.EVENING   -> AppConfig.EVENING_NOTIFICATION_ID to "Evening"
-                AppConfig.TimeOfDay.NIGHT     -> AppConfig.NIGHT_NOTIFICATION_ID to "Night"
+            val notifId = when (timeOfDay) {
+                AppConfig.TimeOfDay.MORNING   -> AppConfig.MORNING_NOTIFICATION_ID
+                AppConfig.TimeOfDay.AFTERNOON -> AppConfig.AFTERNOON_NOTIFICATION_ID
+                AppConfig.TimeOfDay.EVENING   -> AppConfig.EVENING_NOTIFICATION_ID
+                AppConfig.TimeOfDay.NIGHT     -> AppConfig.NIGHT_NOTIFICATION_ID
             }
 
-            showNotification(id = notifId, title = greeting, body = quote)
-            Timber.d("NotificationWorker: ${timeOfDay.displayName} notification sent")
+            // Fetch a cached wallpaper to use as the notification hero image.
+            // Falls back to text-only if nothing is cached yet (e.g. first launch).
+            val wallpaper = try { getRandomWallpaper(AppConfig.NICHE_TYPE) } catch (_: Exception) { null }
+            val thumbUrl  = wallpaper?.thumbnailUrl?.ifBlank { wallpaper.imageUrl } ?: ""
+            val heroBitmap: Bitmap? = if (thumbUrl.isNotBlank()) {
+                withContext(Dispatchers.IO) {
+                    try {
+                        BitmapFactory.decodeStream(URL(thumbUrl).openStream())
+                    } catch (e: Exception) {
+                        Timber.w(e, "NotificationWorker: thumbnail download failed, using text-only")
+                        null
+                    }
+                }
+            } else null
+
+            showNotification(
+                id         = notifId,
+                title      = greeting,
+                body       = quote,
+                heroBitmap = heroBitmap,
+                wallpaperId = wallpaper?.id
+            )
+            Timber.d("NotificationWorker: ${timeOfDay.displayName} notification sent (hasBitmap=${heroBitmap != null})")
             Result.success()
         } catch (e: Exception) {
             Timber.e(e, "NotificationWorker failed")
@@ -75,29 +102,63 @@ class NotificationWorker @AssistedInject constructor(
         }
     }
 
-    private fun showNotification(id: Int, title: String, body: String) {
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext,
-            id,
-            intent,
+    private fun showNotification(
+        id: Int,
+        title: String,
+        body: String,
+        heroBitmap: Bitmap? = null,
+        wallpaperId: String? = null
+    ) {
+        // Main tap: open app home (or deep-link to specific wallpaper)
+        val mainUri   = if (!wallpaperId.isNullOrBlank())
+            Uri.parse("wallcorepro://detail/$wallpaperId")
+        else
+            Uri.parse("wallcorepro://home")
+        val mainIntent = Intent(Intent.ACTION_VIEW, mainUri, applicationContext, MainActivity::class.java)
+            .apply { flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP }
+        val mainPending = PendingIntent.getActivity(
+            applicationContext, id, mainIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(applicationContext, AppConfig.NOTIFICATION_CHANNEL_ID)
+        // Action button: "See More" — opens home screen
+        val browseIntent = Intent(Intent.ACTION_VIEW, Uri.parse("wallcorepro://home"),
+            applicationContext, MainActivity::class.java)
+            .apply { flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP }
+        val browsePending = PendingIntent.getActivity(
+            applicationContext, id + 1000, browseIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(applicationContext, AppConfig.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(mainPending)
             .setAutoCancel(true)
-            .build()
+            .addAction(
+                R.drawable.ic_launcher_foreground,
+                "See More 🌅",
+                browsePending
+            )
+
+        if (heroBitmap != null) {
+            // Rich notification: large wallpaper preview in expanded state,
+            // thumbnail icon in collapsed state — higher tap rate than text-only.
+            builder.setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(heroBitmap)
+                    .bigLargeIcon(null as Bitmap?)
+                    .setSummaryText(body)
+            )
+            builder.setLargeIcon(heroBitmap)
+        } else {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
+        }
 
         val manager = applicationContext.getSystemService(NotificationManager::class.java)
-        manager.notify(id, notification)
+        manager.notify(id, builder.build())
     }
 
     companion object {

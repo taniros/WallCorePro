@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background">
+
+    <!-- Wallpaper thumbnail fills the entire widget -->
+    <ImageView
+        android:id="@+id/widget_bg_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
+
+    <!-- Darkening gradient so text is always readable -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_gradient"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no" />
+
+    <!-- Text area pinned to the bottom -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp"
+        android:paddingTop="8dp">
+
+        <!-- Time-of-day greeting: "☀️ Good Morning!" -->
+        <TextView
+            android:id="@+id/widget_greeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="☀️ Good Morning!"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:shadowColor="#99000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+        <!-- Short wish quote -->
+        <TextView
+            android:id="@+id/widget_quote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Wishing you a beautiful day! 🌸"
+            android:textColor="#EEFFFFFF"
+            android:textSize="10sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:shadowColor="#99000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+        <!-- App branding -->
+        <TextView
+            android:id="@+id/widget_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="WishMagic"
+            android:textColor="#AAFFFFFF"
+            android:textSize="8sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -7,11 +7,14 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "wallpapers",
     indices = [
-        Index(value = ["niche"]),
-        Index(value = ["category"]),
+        // Composite index — covers the hot query: WHERE niche=? ORDER BY createdAt DESC
+        Index(value = ["niche", "createdAt"]),
+        // Composite index — covers category-filtered paged query
+        Index(value = ["niche", "category", "createdAt"]),
         Index(value = ["isTrending"]),
-        Index(value = ["createdAt"]),
-        Index(value = ["isFavorite"])
+        Index(value = ["isFavorite"]),
+        // Covers the main paged feed: WHERE niche=? ORDER BY shuffleKey
+        Index(value = ["niche", "shuffleKey"])
     ]
 )
 data class WallpaperEntity(
@@ -31,7 +34,14 @@ data class WallpaperEntity(
     val photographer: String? = null,
     val photographerUrl: String? = null,
     val cachedAt: Long = System.currentTimeMillis(),
-    val localPath: String? = null
+    val localPath: String? = null,
+    // Stable random sort key: assigned once at insert, used for ORDER BY shuffleKey
+    // so the feed feels randomly ordered yet stays consistent within a scroll session.
+    val shuffleKey: Int = kotlin.random.Random.nextInt(Int.MAX_VALUE),
+    // Full comma-separated source tags (e.g. "flowers, sunrise, morning, nature").
+    // Stored so people-content filtering can check ALL tags, not just the first one
+    // that becomes the title.
+    val tags: String = ""
 )
 
 @Entity(tableName = "categories")

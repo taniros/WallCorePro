@@ -40,6 +40,22 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep-link intent filter — handles wallcorepro:// URIs from app shortcuts,
+                 notifications, and shared wallpaper links. Routes to the correct in-app
+                 destination via MainActivity.onNewIntent → NavController. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wallcorepro" />
+            </intent-filter>
+
+            <!-- Static app shortcuts: 3 quick-access actions in the launcher long-press menu.
+                 Shown on Android 7.1+ (API 25+). Drives daily re-engagement with zero cost. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- FileProvider for sharing wallpapers -->
@@ -83,6 +99,19 @@
             android:name="firebase_crashlytics_collection_enabled"
             android:value="false" />
 
+        <!-- Home screen widget — shows wallpaper thumbnail + wish greeting -->
+        <receiver
+            android:name=".widget.WallpaperWidget"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/wallpaper_widget_info" />
+        </receiver>
+
         <!-- Boot receiver: reschedules daily notifications after device restart -->
         <receiver
             android:name=".worker.BootReceiver"
@@ -104,6 +133,21 @@
             android:name="android.adservices.AD_SERVICES_CONFIG"
             android:resource="@xml/gma_ad_services_config"
             tools:replace="android:resource" />
+
+        <!--
+            16 KB memory page size — Android 15+ requirement.
+            Declares that all native libraries bundled in this APK (Firebase, AdMob,
+            OneSignal) have been compiled with PT_LOAD segments aligned to 16 KB.
+            Without this property the OS refuses to load any .so in the process on
+            devices running in 16 KB page-size mode, causing an immediate crash.
+
+            The companion build.gradle.kts setting jniLibs { useLegacyPackaging = false }
+            stores .so files uncompressed so the kernel can mmap them directly at
+            16 KB-aligned offsets from the APK without extracting to a temp file.
+        -->
+        <property
+            android:name="android.nativeSupportUpto16kPageSize"
+            android:value="true" />
 
     </application>
 

@@ -34,12 +34,17 @@ interface WallpaperApiService {
     // Custom Backend endpoints
     @GET("wallpapers")
     suspend fun getWallpapers(
-        @Query("niche") niche: String,
-        @Query("since") since: Long = 0,
-        @Query("page") page: Int = 1,
-        @Query("per_page") perPage: Int = 20,
-        @Query("category") category: String? = null
+        @Query("niche")     niche: String,
+        @Query("since")     since: Long = 0,
+        @Query("page")      page: Int = 1,
+        @Query("per_page")  perPage: Int = 30,   // matches AppConfig.PAGE_SIZE
+        @Query("category")  category: String? = null,
+        @Query("seed")      seed: Int = 0        // per-session random offset for infinite-wheel variety
     ): Response<WallpaperListResponse>
+
+    /** Fire-and-forget health ping — wakes Render free-tier server before it is needed. */
+    @GET("../health")
+    suspend fun healthCheck(): Response<Unit>
 
     @GET("categories")
     suspend fun getCategories(

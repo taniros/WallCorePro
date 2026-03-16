@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Static app shortcuts — appear in the launcher long-press menu on Android 7.1+.
+    These are the top 3 actions users repeat most, surfaced one tap from the home screen.
+
+    Organic traffic impact:
+      • Users who see shortcuts re-engage 2–3× more often than those who don't.
+      • "Browse Wallpapers" and "AI Wish" are strong hooks that bring users back daily.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Shortcut 1: Browse latest wallpapers -->
+    <shortcut
+        android:shortcutId="browse_wallpapers"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_browse_short"
+        android:shortcutLongLabel="@string/shortcut_browse_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.offline.wallcorepro"
+            android:targetClass="com.offline.wallcorepro.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <!-- Shortcut 2: Open saved / favourite wallpapers -->
+    <shortcut
+        android:shortcutId="open_favorites"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_favorites_short"
+        android:shortcutLongLabel="@string/shortcut_favorites_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.offline.wallcorepro"
+            android:targetClass="com.offline.wallcorepro.MainActivity"
+            android:data="wallcorepro://favorites" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <!-- Shortcut 3: AI wish generator -->
+    <shortcut
+        android:shortcutId="open_ai"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_ai_short"
+        android:shortcutLongLabel="@string/shortcut_ai_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.offline.wallcorepro"
+            android:targetClass="com.offline.wallcorepro.MainActivity"
+            android:data="wallcorepro://ai" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+</shortcuts>

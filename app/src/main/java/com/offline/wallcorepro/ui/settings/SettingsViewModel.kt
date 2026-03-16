@@ -27,7 +27,8 @@ data class SettingsUiState(
     val autoTheme: Boolean                   = false,
     val isFavoritesLocked: Boolean           = false,
     val smartReminderHours: Pair<Int,Int>?   = null, // suggested (morning, night) hours
-    val isSmartReminderDismissed: Boolean    = true
+    val isSmartReminderDismissed: Boolean    = true,
+    val detailFullScreenByDefault: Boolean  = false
 )
 
 @HiltViewModel
@@ -41,7 +42,8 @@ class SettingsViewModel @Inject constructor(
         val autoTheme: Boolean              = false,
         val isFavoritesLocked: Boolean      = false,
         val smartReminderHours: Pair<Int,Int>? = null,
-        val isSmartReminderDismissed: Boolean  = true
+        val isSmartReminderDismissed: Boolean  = true,
+        val detailFullScreenByDefault: Boolean = false
     )
     private val _extraState = MutableStateFlow(ExtraState())
 
@@ -85,7 +87,8 @@ class SettingsViewModel @Inject constructor(
                     autoTheme                = extra.autoTheme,
                     isFavoritesLocked        = extra.isFavoritesLocked,
                     smartReminderHours       = extra.smartReminderHours,
-                    isSmartReminderDismissed = extra.isSmartReminderDismissed
+                    isSmartReminderDismissed = extra.isSmartReminderDismissed,
+                    detailFullScreenByDefault = extra.detailFullScreenByDefault
                 )
             }.collect { merged -> _mergedUiState.value = merged }
         }
@@ -109,6 +112,15 @@ class SettingsViewModel @Inject constructor(
                 _extraState.update { it.copy(smartReminderHours = suggestion, isSmartReminderDismissed = dismissed) }
             }
         }
+        viewModelScope.launch {
+            preferenceManager.detailFullScreenByDefault.collect { v ->
+                _extraState.update { it.copy(detailFullScreenByDefault = v) }
+            }
+        }
+    }
+
+    fun setDetailFullScreenByDefault(enabled: Boolean) = viewModelScope.launch {
+        preferenceManager.setDetailFullScreenByDefault(enabled)
     }
 
     fun setDarkMode(enabled: Boolean) = viewModelScope.launch {
