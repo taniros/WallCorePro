@@ -112,7 +112,9 @@ fun WallCoreNavGraph(
                     if (AppConfig.ADS_ENABLED && 
                         com.offline.wallcorepro.util.RemoteConfigManager.bannerAdEnabled &&
                         navUiStateHolder.homeContentLoaded) {
-                        BannerAdView(modifier = Modifier.fillMaxWidth())
+                        Box(modifier = Modifier.fillMaxWidth().height(60.dp)) {
+                            BannerAdView(modifier = Modifier.fillMaxWidth().height(60.dp))
+                        }
                     }
                     WallCoreBottomNavBar(
                         items        = bottomNavItems,
