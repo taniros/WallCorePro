@@ -49,7 +49,9 @@ fun BannerAdView(modifier: Modifier = Modifier) {
         factory = { ctx ->
             val displayMetrics = ctx.resources.displayMetrics
             val adWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
-            val adSize   = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(ctx, adWidthDp)
+            // Use anchored adaptive banner with max height 60dp to prevent oversized ads
+            val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(ctx, adWidthDp)
+                .let { if (it.height > 60) AdSize.BANNER else it }
 
             AdView(ctx).apply {
                 adUnitId = AppConfig.ADMOB_INLINE_BANNER_ID
